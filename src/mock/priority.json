@@ -1,0 +1,1 @@
+[{"_id":{"$oid":"694264fb730d6ae5e10aef8c"},"id":"priority_1","name":"低","color":"#5CB85C"},{"_id":{"$oid":"694264fb730d6ae5e10aef8d"},"id":"priority_2","name":"中","color":"#F0AD4E"},{"_id":{"$oid":"694264fb730d6ae5e10aef8e"},"id":"priority_3","name":"高","color":"#D9534F"},{"_id":{"$oid":"694264fb730d6ae5e10aef8f"},"id":"priority_4","name":"紧急","color":"#FF3B30"}]
