@@ -104,14 +104,14 @@ const columns: TableProps<Task>['columns'] = [
     dataIndex: 'isTop',
     key: 'isTop',
     width: 100,
-    render: (isTop: boolean) => isTop ? SingleTag({color: 'red', id: 'isTop', children: '是'}) : SingleTag({color: 'gray', id: 'notTop', children: '否'}),
+    render: (isTop: boolean) => isTop ? <SingleTag color='red' id='isTop'>是</SingleTag> : <SingleTag color='gray' id='notTop'>否</SingleTag>,
   },
   {
     title: '是否移除',
     dataIndex: 'isRemoved',
     key: 'isRemoved',
     width: 100,
-    render: (isRemoved: boolean) => isRemoved ? SingleTag({color: 'red', id: 'isRemoved', children: '是'}) : SingleTag({color: 'gray', id: 'notRemoved', children: '否'}),
+    render: (isRemoved: boolean) => isRemoved ? <SingleTag color='red' id='isRemoved'>是</SingleTag> : <SingleTag color='gray' id='notRemoved'>否</SingleTag>,
   },
 ]
 export default function index() {
