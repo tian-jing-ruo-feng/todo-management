@@ -8,7 +8,7 @@ import mockStatus from '@/mock/status.json'
 import mockTasks from '@/mock/task.json'
 import dayjs from 'dayjs'
 import { useState } from 'react'
-import Kanban from '../kanban'
+import KanbanPage from '../kanban'
 import SelectTab, { type ButtonItem } from './SelectTab'
 import TaskStatistc from './TaskStatistc'
 
@@ -187,7 +187,7 @@ export default function Tasks() {
     <div className="flex flex-col gap-3 p-3">
       <TaskStatistc></TaskStatistc>
       <SelectTab onChange={handleSelectTabChange}></SelectTab>
-      {selectTab?.key === 'kanban' && <Kanban></Kanban>}
+      {selectTab?.key === 'kanban' && <KanbanPage></KanbanPage>}
 
       {selectTab?.key === 'priority' && (
         <Table<Task>
