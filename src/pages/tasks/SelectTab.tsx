@@ -1,10 +1,10 @@
-import { Button } from 'antd'
 import {
-  ToTopOutlined,
-  TableOutlined,
   ClockCircleOutlined,
+  TableOutlined,
+  ToTopOutlined,
   UserOutlined,
 } from '@ant-design/icons'
+import { Button, Card } from 'antd'
 
 const buttons = [
   // 优先级视图
@@ -39,18 +39,20 @@ const buttons = [
 ]
 export default function SelectTab() {
   return (
-    <ul className="flex space-x-4">
-      {buttons.map((item) => (
-        <li key={item.key}>
-          <Button
-            size="large"
-            type={item.isActive ? 'primary' : 'default'}
-            icon={item.icon}
-          >
-            {item.title}
-          </Button>
-        </li>
-      ))}
-    </ul>
+    <Card>
+      <ul className="flex space-x-4">
+        {buttons.map((item) => (
+          <li key={item.key}>
+            <Button
+              size="large"
+              type={item.isActive ? 'primary' : 'default'}
+              icon={item.icon}
+            >
+              {item.title}
+            </Button>
+          </li>
+        ))}
+      </ul>
+    </Card>
   )
 }

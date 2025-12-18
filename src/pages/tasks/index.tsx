@@ -1,16 +1,16 @@
-import { type TableProps, Table, Tag } from 'antd'
 import type { Task } from '@/types/Task'
+import { type TableProps, Flex, Table, Tag } from 'antd'
 // import TaskItem from './TaskItem'
 import SingleTag from '@/components/SingleTag'
-import mockTasks from '@/mock/task.json'
 import mockGroups from '@/mock/group.json'
-import mockStatus from '@/mock/status.json'
 import mockPriority from '@/mock/priority.json'
+import mockStatus from '@/mock/status.json'
+import mockTasks from '@/mock/task.json'
 import dayjs from 'dayjs'
 import SelectTab from './SelectTab'
 
 const groupTags = (groups: string[]) => {
-  return groups.map((groupId) => {
+  const tags = groups.map((groupId) => {
     const group = mockGroups.find((g) => g.id === groupId)
     return group ? (
       <Tag key={groupId} color={group.color}>
@@ -20,6 +20,11 @@ const groupTags = (groups: string[]) => {
       ''
     )
   })
+  return (
+    <Flex gap="small" align="center" wrap>
+      {tags}
+    </Flex>
+  )
 }
 
 const statusTags = (statusIds: string[]) => {
@@ -46,6 +51,20 @@ const priorityTags = (priorityIds: string[]) => {
       ''
     )
   })
+}
+
+const rowSelection: TableProps<Task>['rowSelection'] = {
+  onChange: (selectedRowKeys, selectedRows) => {
+    console.log(
+      `selectedRowKeys: ${selectedRowKeys}`,
+      'selectedRows:',
+      selectedRows
+    )
+  },
+  getCheckboxProps: (record) => ({
+    disabled: record.name === 'Disabled User', // Column configuration not to be checked
+    name: record.name,
+  }),
 }
 
 const tasks: Task[] = mockTasks
@@ -157,12 +176,15 @@ const columns: TableProps<Task>['columns'] = [
 ]
 export default function index() {
   return (
-    <div className="flex flex-col gap-3">
+    <div className="flex flex-col gap-3 p-3">
       <SelectTab></SelectTab>
-      {/* {
-        tasks.map((task, taskIndex) => <TaskItem task={task} key={taskIndex} />)
-      } */}
-      <Table<Task> bordered columns={columns} dataSource={tasks} />
+      <Table<Task>
+        bordered
+        rowKey="id"
+        columns={columns}
+        dataSource={tasks}
+        rowSelection={{ type: 'checkbox', ...rowSelection }}
+      />
     </div>
   )
 }
