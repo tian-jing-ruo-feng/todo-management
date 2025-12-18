@@ -7,7 +7,9 @@ import mockPriority from '@/mock/priority.json'
 import mockStatus from '@/mock/status.json'
 import mockTasks from '@/mock/task.json'
 import dayjs from 'dayjs'
-import SelectTab from './SelectTab'
+import { useState } from 'react'
+import Kanban from '../kanban'
+import SelectTab, { type ButtonItem } from './SelectTab'
 import TaskStatistc from './TaskStatistc'
 
 const groupTags = (groups: string[]) => {
@@ -175,18 +177,27 @@ const columns: TableProps<Task>['columns'] = [
       ),
   },
 ]
-export default function index() {
+export default function Tasks() {
+  const [selectTab, setSelectTab] = useState<ButtonItem>()
+  const handleSelectTabChange = (item: ButtonItem) => {
+    setSelectTab(item)
+  }
+
   return (
     <div className="flex flex-col gap-3 p-3">
       <TaskStatistc></TaskStatistc>
-      <SelectTab></SelectTab>
-      <Table<Task>
-        bordered
-        rowKey="id"
-        columns={columns}
-        dataSource={tasks}
-        rowSelection={{ type: 'checkbox', ...rowSelection }}
-      />
+      <SelectTab onChange={handleSelectTabChange}></SelectTab>
+      {selectTab?.key === 'kanban' && <Kanban></Kanban>}
+
+      {selectTab?.key === 'priority' && (
+        <Table<Task>
+          bordered
+          rowKey="id"
+          columns={columns}
+          dataSource={tasks}
+          rowSelection={{ type: 'checkbox', ...rowSelection }}
+        />
+      )}
     </div>
   )
 }
