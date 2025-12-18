@@ -8,6 +8,7 @@ import mockStatus from '@/mock/status.json'
 import mockTasks from '@/mock/task.json'
 import dayjs from 'dayjs'
 import SelectTab from './SelectTab'
+import TaskStatistc from './TaskStatistc'
 
 const groupTags = (groups: string[]) => {
   const tags = groups.map((groupId) => {
@@ -177,6 +178,7 @@ const columns: TableProps<Task>['columns'] = [
 export default function index() {
   return (
     <div className="flex flex-col gap-3 p-3">
+      <TaskStatistc></TaskStatistc>
       <SelectTab></SelectTab>
       <Table<Task>
         bordered
