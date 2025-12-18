@@ -1,15 +1,14 @@
 export interface Status {
-
   /**
    * 状态别标识
    */
-  id: string;
+  id: string
   /**
    * 状态名称
    */
-  name: string;
+  name: string
   /**
    * 状态颜色
    */
-  color: string;
+  color: string
 }

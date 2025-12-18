@@ -1,9 +1,6 @@
-import { Layout } from "antd";
+import { Layout } from 'antd'
 const { Header, Footer, Content } = Layout
 import Tasks from '../pages/tasks'
-
-
-
 
 export default function PageLayout() {
   return (

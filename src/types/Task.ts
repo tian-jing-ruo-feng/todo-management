@@ -1,16 +1,16 @@
-import type { Group } from "./Group";
-import type { Status } from "./Status";
-import type { Priority } from "./Priority";
+import type { Group } from './Group'
+import type { Status } from './Status'
+import type { Priority } from './Priority'
 
 export interface Task {
   /**
    * 任务名称
    */
-  name: string;
+  name: string
   /**
    * 任务内容
    */
-  content?: string;
+  content?: string
   /**
    * 任务id
    */
@@ -18,7 +18,7 @@ export interface Task {
   /**
    * 任务状态
    */
-  status: Status['id'];
+  status: Status['id']
   /**
    * 是否移除（软删除）
    */
@@ -32,8 +32,8 @@ export interface Task {
    */
   createTime?: string
   /**
-  * 更新时间
-  */
+   * 更新时间
+   */
   updateTime?: string
   /**
    * 期望开始时间

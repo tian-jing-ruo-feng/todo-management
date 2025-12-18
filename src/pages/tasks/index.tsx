@@ -1,33 +1,52 @@
-import { type TableProps, Table, Tag } from 'antd';
-import type { Task } from '@/types/Task';
+import { type TableProps, Table, Tag } from 'antd'
+import type { Task } from '@/types/Task'
 // import TaskItem from './TaskItem'
-import SingleTag from '@/components/SingleTag';
+import SingleTag from '@/components/SingleTag'
 import mockTasks from '@/mock/task.json'
 import mockGroups from '@/mock/group.json'
 import mockStatus from '@/mock/status.json'
 import mockPriority from '@/mock/priority.json'
 import dayjs from 'dayjs'
+import SelectTab from './SelectTab'
 
 const groupTags = (groups: string[]) => {
-  return groups.map(groupId => {
-    const group = mockGroups.find(g => g.id === groupId);
-    return group ? <Tag key={groupId} color={group.color}>{group.name}</Tag>: '';
-  });
-};
+  return groups.map((groupId) => {
+    const group = mockGroups.find((g) => g.id === groupId)
+    return group ? (
+      <Tag key={groupId} color={group.color}>
+        {group.name}
+      </Tag>
+    ) : (
+      ''
+    )
+  })
+}
 
 const statusTags = (statusIds: string[]) => {
-  return statusIds.map(statusId => {
-    const status = mockStatus.find(s => s.id === statusId);
-    return status ? <Tag key={statusId} color={status.color}>{status.name}</Tag>: '';
-  });
-};
+  return statusIds.map((statusId) => {
+    const status = mockStatus.find((s) => s.id === statusId)
+    return status ? (
+      <Tag key={statusId} color={status.color}>
+        {status.name}
+      </Tag>
+    ) : (
+      ''
+    )
+  })
+}
 
 const priorityTags = (priorityIds: string[]) => {
-  return priorityIds.map(priorityId => {
-    const priority = mockPriority.find(p => p.id === priorityId);
-    return priority ? <Tag key={priorityId} color={priority.color}>{priority.name}</Tag>: '';
-  });
-};
+  return priorityIds.map((priorityId) => {
+    const priority = mockPriority.find((p) => p.id === priorityId)
+    return priority ? (
+      <Tag key={priorityId} color={priority.color}>
+        {priority.name}
+      </Tag>
+    ) : (
+      ''
+    )
+  })
+}
 
 const tasks: Task[] = mockTasks
 const columns: TableProps<Task>['columns'] = [
@@ -76,51 +95,74 @@ const columns: TableProps<Task>['columns'] = [
     dataIndex: 'createTime',
     key: 'createTime',
     width: 180,
-    render: (time: string) => time ? dayjs(time).format('YYYY-MM-DD HH:mm:ss') : '-',
+    render: (time: string) =>
+      time ? dayjs(time).format('YYYY-MM-DD HH:mm:ss') : '-',
   },
   {
     title: '更新时间',
     dataIndex: 'updateTime',
     key: 'updateTime',
     width: 180,
-    render: (time: string) => time ? dayjs(time).format('YYYY-MM-DD HH:mm:ss') : '-',
+    render: (time: string) =>
+      time ? dayjs(time).format('YYYY-MM-DD HH:mm:ss') : '-',
   },
   {
     title: '期望开始时间',
     dataIndex: 'expectStartTime',
     key: 'expectStartTime',
     width: 180,
-    render: (time: string) => time ? dayjs(time).format('YYYY-MM-DD HH:mm:ss') : '-',
+    render: (time: string) =>
+      time ? dayjs(time).format('YYYY-MM-DD HH:mm:ss') : '-',
   },
   {
     title: '期望结束时间',
     dataIndex: 'expectEndTime',
     key: 'expectEndTime',
     width: 180,
-    render: (time: string) => time ? dayjs(time).format('YYYY-MM-DD HH:mm:ss') : '-',
+    render: (time: string) =>
+      time ? dayjs(time).format('YYYY-MM-DD HH:mm:ss') : '-',
   },
   {
     title: '是否置顶',
     dataIndex: 'isTop',
     key: 'isTop',
     width: 100,
-    render: (isTop: boolean) => isTop ? <SingleTag color='red' id='isTop'>是</SingleTag> : <SingleTag color='gray' id='notTop'>否</SingleTag>,
+    render: (isTop: boolean) =>
+      isTop ? (
+        <SingleTag color="red" id="isTop">
+          是
+        </SingleTag>
+      ) : (
+        <SingleTag color="gray" id="notTop">
+          否
+        </SingleTag>
+      ),
   },
   {
     title: '是否移除',
     dataIndex: 'isRemoved',
     key: 'isRemoved',
     width: 100,
-    render: (isRemoved: boolean) => isRemoved ? <SingleTag color='red' id='isRemoved'>是</SingleTag> : <SingleTag color='gray' id='notRemoved'>否</SingleTag>,
+    render: (isRemoved: boolean) =>
+      isRemoved ? (
+        <SingleTag color="red" id="isRemoved">
+          是
+        </SingleTag>
+      ) : (
+        <SingleTag color="gray" id="notRemoved">
+          否
+        </SingleTag>
+      ),
   },
 ]
 export default function index() {
   return (
-    <ul>
+    <div className="flex flex-col gap-3">
+      <SelectTab></SelectTab>
       {/* {
         tasks.map((task, taskIndex) => <TaskItem task={task} key={taskIndex} />)
       } */}
       <Table<Task> bordered columns={columns} dataSource={tasks} />
-    </ul>
+    </div>
   )
 }

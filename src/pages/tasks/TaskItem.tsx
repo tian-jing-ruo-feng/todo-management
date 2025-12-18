@@ -1,5 +1,5 @@
-import { Card } from "antd"
-import type { Task } from "../../types/Task"
+import { Card } from 'antd'
+import type { Task } from '../../types/Task'
 
 interface TaskItemProps {
   task: Task

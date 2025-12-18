@@ -1,1 +1,38 @@
-[{"_id":{"$oid":"69426490a05b090b3a287f69"},"id":"group_1","name":"前端开发","color":"#3498DB"},{"_id":{"$oid":"69426490a05b090b3a287f6a"},"id":"group_2","name":"后端开发","color":"#2ECC71"},{"_id":{"$oid":"69426490a05b090b3a287f6b"},"id":"group_3","name":"UI/UX 设计","color":"#9B59B6"},{"_id":{"$oid":"69426490a05b090b3a287f6c"},"id":"group_4","name":"产品管理","color":"#E67E22"},{"_id":{"$oid":"69426490a05b090b3a287f6d"},"id":"group_5","name":"测试","color":"#E74C3C"},{"_id":{"$oid":"69426490a05b090b3a287f6e"},"id":"group_6","name":"文档","color":"#95A5A6"}]
+[
+  {
+    "_id": { "$oid": "69426490a05b090b3a287f69" },
+    "id": "group_1",
+    "name": "前端开发",
+    "color": "#3498DB"
+  },
+  {
+    "_id": { "$oid": "69426490a05b090b3a287f6a" },
+    "id": "group_2",
+    "name": "后端开发",
+    "color": "#2ECC71"
+  },
+  {
+    "_id": { "$oid": "69426490a05b090b3a287f6b" },
+    "id": "group_3",
+    "name": "UI/UX 设计",
+    "color": "#9B59B6"
+  },
+  {
+    "_id": { "$oid": "69426490a05b090b3a287f6c" },
+    "id": "group_4",
+    "name": "产品管理",
+    "color": "#E67E22"
+  },
+  {
+    "_id": { "$oid": "69426490a05b090b3a287f6d" },
+    "id": "group_5",
+    "name": "测试",
+    "color": "#E74C3C"
+  },
+  {
+    "_id": { "$oid": "69426490a05b090b3a287f6e" },
+    "id": "group_6",
+    "name": "文档",
+    "color": "#95A5A6"
+  }
+]

@@ -8,10 +8,7 @@
     "content": "开发登录页面，包含邮箱/密码登录和第三方登录选项",
     "status": "status_2",
     "priority": "priority_3",
-    "group": [
-      "group_1",
-      "group_2"
-    ],
+    "group": ["group_1", "group_2"],
     "createTime": "2024-01-15T10:30:00Z",
     "updateTime": "2024-01-20T14:20:00Z",
     "expectStartTime": "2024-01-18T09:00:00Z",
@@ -28,9 +25,7 @@
     "content": "优化用户查询接口的数据库索引",
     "status": "status_3",
     "priority": "priority_2",
-    "group": [
-      "group_2"
-    ],
+    "group": ["group_2"],
     "createTime": "2024-01-10T08:00:00Z",
     "updateTime": "2024-01-18T16:45:00Z",
     "expectStartTime": "2024-01-12T10:00:00Z",
@@ -47,10 +42,7 @@
     "content": "创建可复用的设计系统组件库",
     "status": "status_1",
     "priority": "priority_4",
-    "group": [
-      "group_3",
-      "group_1"
-    ],
+    "group": ["group_3", "group_1"],
     "createTime": "2024-01-22T13:15:00Z",
     "updateTime": "2024-01-22T13:15:00Z",
     "expectStartTime": "2024-01-25T09:00:00Z",
@@ -67,10 +59,7 @@
     "content": "为用户管理模块编写详细的 API 文档",
     "status": "status_2",
     "priority": "priority_1",
-    "group": [
-      "group_6",
-      "group_2"
-    ],
+    "group": ["group_6", "group_2"],
     "createTime": "2024-01-18T11:20:00Z",
     "updateTime": "2024-01-21T15:30:00Z",
     "expectStartTime": "2024-01-20T14:00:00Z",
@@ -87,9 +76,7 @@
     "content": "评审下一季度产品需求，确定优先级",
     "status": "status_4",
     "priority": "priority_2",
-    "group": [
-      "group_4"
-    ],
+    "group": ["group_4"],
     "createTime": "2024-01-05T09:00:00Z",
     "updateTime": "2024-01-25T11:00:00Z",
     "expectStartTime": "2024-01-15T10:00:00Z",
@@ -106,10 +93,7 @@
     "content": "为订单模块编写单元测试",
     "status": "status_1",
     "priority": "priority_2",
-    "group": [
-      "group_5",
-      "group_2"
-    ],
+    "group": ["group_5", "group_2"],
     "createTime": "2024-01-24T16:00:00Z",
     "updateTime": "2024-01-24T16:00:00Z",
     "expectStartTime": "2024-01-29T10:00:00Z",
@@ -126,9 +110,7 @@
     "content": "确保网站在移动设备上的显示正常",
     "status": "status_3",
     "priority": "priority_3",
-    "group": [
-      "group_1"
-    ],
+    "group": ["group_1"],
     "createTime": "2024-01-12T14:30:00Z",
     "updateTime": "2024-01-19T10:15:00Z",
     "expectStartTime": "2024-01-15T09:00:00Z",
@@ -145,10 +127,7 @@
     "content": "对系统进行安全漏洞扫描和修复",
     "status": "status_2",
     "priority": "priority_4",
-    "group": [
-      "group_2",
-      "group_5"
-    ],
+    "group": ["group_2", "group_5"],
     "createTime": "2024-01-20T09:45:00Z",
     "updateTime": "2024-01-23T14:20:00Z",
     "expectStartTime": "2024-01-22T10:00:00Z",

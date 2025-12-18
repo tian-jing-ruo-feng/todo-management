@@ -1,19 +1,19 @@
-import { Tag } from "antd";
+import { Tag } from 'antd'
 
 export interface SingleTagProps {
+  color: string
 
-  color: string;
+  id: string
 
-  id: string;
-
-  children: React.ReactNode;
-
+  children: React.ReactNode
 }
 
 const SingleTag = (props: SingleTagProps) => {
   return (
-    <Tag color={props.color} key={props.id}>{props.children}</Tag>
-  );
-};
+    <Tag color={props.color} key={props.id}>
+      {props.children}
+    </Tag>
+  )
+}
 
-export default SingleTag;
+export default SingleTag

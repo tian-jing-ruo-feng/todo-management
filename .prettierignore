@@ -1,4 +1,9 @@
-# Lock files
-package-lock.json
+node_modules
+dist
+build
+public
+coverage
+*.log
 pnpm-lock.yaml
 yarn.lock
+package-lock.json
