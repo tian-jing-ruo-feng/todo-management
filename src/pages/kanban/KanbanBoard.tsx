@@ -18,7 +18,7 @@ import {
 import { useCallback, useMemo, useRef, useState } from 'react'
 import KanbanColumn from './KanbanColumn'
 import KanbanItem from './KanbanItem'
-import { useSameColumnSorting, useCrossColumnDragging } from './hooks'
+import { useCrossColumnDragging, useSameColumnSorting } from './hooks'
 
 interface Column {
   id: string
@@ -244,10 +244,15 @@ export default function KanbanBoard({
           </div>
         </SortableContext>
 
-        <DragOverlay>
+        <DragOverlay
+          dropAnimation={{
+            duration: 250,
+            easing: 'cubic-bezier(0.18, 0.67, 0.6, 1.22)',
+          }}
+        >
           {activeTask ? (
-            <div className="rotate-6 shadow-2xl">
-              <KanbanItem task={activeTask} />
+            <div className="rotate-3 shadow-2xl scale-105 border-2 border-blue-400 rounded-lg bg-white">
+              <KanbanItem task={activeTask} isDragging={true} />
             </div>
           ) : null}
         </DragOverlay>
