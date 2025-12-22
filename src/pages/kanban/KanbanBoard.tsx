@@ -1,11 +1,11 @@
 import type { Task } from '@/types/Task'
 import type { DragEndEvent, DragOverEvent, DragStartEvent } from '@dnd-kit/core'
 import {
-  closestCenter,
   DndContext,
   DragOverlay,
   KeyboardSensor,
   PointerSensor,
+  rectIntersection,
   useSensor,
   useSensors,
 } from '@dnd-kit/core'
@@ -174,20 +174,17 @@ export default function KanbanBoard({
       // 如果还是找不到目标列或源列无效，不处理
       if (!targetColumnId || !dragState.sourceColumn) return
 
-      // 防止重复处理相同的目标列
+      // 优化：减少不必要的状态更新，只在真正需要时处理
       if (dragState.lastTargetColumn === targetColumnId) return
       dragState.lastTargetColumn = targetColumnId
 
-      // 获取当前状态快照，避免重复更新
+      // 获取当前状态快照，确保数据一致性
       const currentTasks = dragState.tasksSnapshot || memoizedTasksByColumn
       const sourceColumn = dragState.sourceColumn
       const activeTask = findTaskByIdSimple(activeId, currentTasks)
       if (!activeTask) return
 
-      // 计算新的任务分布，只在同列内排序时更新（提供即时反馈）
-      const newTasksByColumn = { ...currentTasks }
-
-      // 如果目标列和源列相同（组内排序），提供即时反馈
+      // 只在同列内排序时提供即时反馈，跨列移动延迟到handleDragEnd处理
       if (sourceColumn === targetColumnId) {
         const targetTasks = [...currentTasks[targetColumnId]]
         const currentIndex = targetTasks.findIndex(
@@ -198,23 +195,31 @@ export default function KanbanBoard({
         // 如果找不到目标任务或位置无效，不更新
         if (overIndex === -1 || currentIndex === -1) return
 
-        // 重新排序：移除当前任务，然后插入到目标位置
-        const newTargetTasks = targetTasks.filter(
-          (task) => task.id !== activeId
-        )
+        // 性能优化：只有位置真正改变时才更新
+        if (currentIndex !== overIndex) {
+          // 重新排序：移除当前任务，然后插入到目标位置
+          const newTargetTasks = targetTasks.filter(
+            (task) => task.id !== activeId
+          )
 
-        // 计算插入位置
-        let insertIndex = overIndex
-        if (currentIndex < overIndex) {
-          // 如果从上往下拖，插入位置减1（因为已经移除了当前元素）
-          insertIndex = overIndex - 1
+          // 计算插入位置
+          let insertIndex = overIndex
+          if (currentIndex < overIndex) {
+            // 如果从上往下拖，插入位置减1（因为已经移除了当前元素）
+            insertIndex = overIndex - 1
+          }
+
+          newTargetTasks.splice(insertIndex, 0, activeTask)
+
+          // 使用批量更新减少重渲染
+          const newTasksByColumn = {
+            ...currentTasks,
+            [targetColumnId]: newTargetTasks,
+          }
+
+          // 只在同列内排序时提供即时反馈
+          setTasksByColumn(newTasksByColumn)
         }
-
-        newTargetTasks.splice(insertIndex, 0, activeTask)
-        newTasksByColumn[targetColumnId] = newTargetTasks
-
-        // 只在同列内排序时提供即时反馈
-        setTasksByColumn(newTasksByColumn)
       }
       // 跨列移动不在handleDragOver中处理，只在handleDragEnd中处理
     },
@@ -348,7 +353,7 @@ export default function KanbanBoard({
 
       <DndContext
         sensors={sensors}
-        collisionDetection={closestCenter}
+        collisionDetection={rectIntersection}
         onDragStart={handleDragStart}
         onDragOver={handleDragOver}
         onDragEnd={handleDragEnd}

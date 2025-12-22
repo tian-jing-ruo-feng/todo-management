@@ -19,8 +19,23 @@ export default function KanbanItem({ task }: KanbanItemProps) {
 
   const style = {
     transform: CSS.Transform.toString(transform),
-    transition,
-    opacity: isDragging ? 0.5 : 1,
+    transition: isDragging ? 'none' : transition, // 拖拽时移除过渡效果
+    opacity: isDragging ? 0.8 : 1,
+    zIndex: isDragging ? 1000 : 'auto',
+    position: isDragging ? 'relative' : 'static' as const,
+  }
+
+  const getPriorityColor = (priority: string) => {
+    switch (priority) {
+      case 'high':
+        return 'text-red-500'
+      case 'medium':
+        return 'text-yellow-500'
+      case 'low':
+        return 'text-green-500'
+      default:
+        return 'text-gray-500'
+    }
   }
 
   return (
@@ -29,19 +44,33 @@ export default function KanbanItem({ task }: KanbanItemProps) {
       style={style}
       {...attributes}
       {...listeners}
-      className="mb-3 cursor-move"
+      className={`mb-3 transition-all duration-200 ${
+        isDragging 
+          ? 'cursor-grabbing scale-105' 
+          : 'cursor-grab hover:scale-[1.01]'
+      }`}
     >
       <Card
         size="small"
         title={task.name}
-        className="hover:shadow-md transition-shadow"
+        className={`transition-all duration-200 ${
+          isDragging 
+            ? 'shadow-2xl border-blue-400' 
+            : 'hover:shadow-lg hover:border-gray-300'
+        }`}
       >
         {task.content && (
-          <p className="text-gray-600 text-sm mb-2">{task.content}</p>
+          <p className="text-gray-600 text-sm mb-2 line-clamp-2">{task.content}</p>
         )}
-        <div className="flex justify-between items-center text-xs text-gray-500">
-          <span>优先级: {task.priority}</span>
-          {task.isTop && <span className="text-orange-500">置顶</span>}
+        <div className="flex justify-between items-center text-xs">
+          <span className={`font-medium ${getPriorityColor(task.priority)}`}>
+            {task.priority === 'high' ? '高' : task.priority === 'medium' ? '中' : '低'}优先级
+          </span>
+          {task.isTop && (
+            <span className="text-orange-500 font-semibold bg-orange-50 px-2 py-1 rounded">
+              置顶
+            </span>
+          )}
         </div>
       </Card>
     </div>
