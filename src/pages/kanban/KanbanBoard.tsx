@@ -174,10 +174,6 @@ export default function KanbanBoard({
       // 如果还是找不到目标列或源列无效，不处理
       if (!targetColumnId || !dragState.sourceColumn) return
 
-      // 优化：减少不必要的状态更新，只在真正需要时处理
-      if (dragState.lastTargetColumn === targetColumnId) return
-      dragState.lastTargetColumn = targetColumnId
-
       // 获取当前状态快照，确保数据一致性
       const currentTasks = dragState.tasksSnapshot || memoizedTasksByColumn
       const sourceColumn = dragState.sourceColumn
@@ -217,8 +213,13 @@ export default function KanbanBoard({
             [targetColumnId]: newTargetTasks,
           }
 
-          // 只在同列内排序时提供即时反馈
+          // 在同列内排序时提供即时反馈，确保交互和数据的实时同步
           setTasksByColumn(newTasksByColumn)
+        }
+      } else {
+        // 跨列移动时，只记录最后一次目标列，避免重复处理
+        if (dragState.lastTargetColumn !== targetColumnId) {
+          dragState.lastTargetColumn = targetColumnId
         }
       }
       // 跨列移动不在handleDragOver中处理，只在handleDragEnd中处理
@@ -260,12 +261,16 @@ export default function KanbanBoard({
         targetColumnId = sourceColumn
       }
 
-      // 获取当前状态（可能是经过handleDragOver处理后的状态）
-      let finalTasksByColumn = { ...memoizedTasksByColumn }
+      // 获取当前状态
+      let finalTasksByColumn
 
-      // 如果是跨列移动，需要重新计算最终状态
-      if (sourceColumn !== targetColumnId) {
-        // 使用初始状态快照进行跨列计算
+      // 区分同列排序和跨列移动
+      if (sourceColumn === targetColumnId) {
+        // 同列内排序：使用当前memoized状态（已通过handleDragOver实时更新）
+        // 确保最终数据与用户看到的视觉效果完全一致
+        finalTasksByColumn = { ...memoizedTasksByColumn }
+      } else {
+        // 跨列移动：使用初始状态快照进行计算
         const initialTasks = dragState.tasksSnapshot || memoizedTasksByColumn
 
         const sourceTasks = [...(initialTasks[sourceColumn] || [])]
