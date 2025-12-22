@@ -18,6 +18,7 @@ import {
 import { useCallback, useMemo, useRef, useState } from 'react'
 import KanbanColumn from './KanbanColumn'
 import KanbanItem from './KanbanItem'
+import { useSameColumnSorting, useCrossColumnDragging } from './hooks'
 
 interface Column {
   id: string
@@ -94,17 +95,25 @@ export default function KanbanBoard({
   // 记忆化当前任务分布，避免不必要的计算
   const memoizedTasksByColumn = useMemo(() => tasksByColumn, [tasksByColumn])
 
-  // 使用 ref 来跟踪拖拽状态，避免状态更新导致的问题
-  const dragStateRef = useRef<{
-    activeId: string | null
-    sourceColumn: string | null
-    tasksSnapshot: Record<string, Task[]> | null
-    lastTargetColumn: string | null
-  }>({
-    activeId: null,
-    sourceColumn: null,
-    tasksSnapshot: null,
-    lastTargetColumn: null,
+  // 使用封装的hooks
+  const { handleSameColumnSorting } = useSameColumnSorting({
+    tasksByColumn,
+    setTasksByColumn,
+    findTaskById: findTaskByIdSimple,
+    tasksSnapshot: memoizedTasksByColumn, // 实际会在初始化时更新
+  })
+
+  const {
+    dragStateRef,
+    initializeDrag,
+    updateTargetColumn,
+    handleCrossColumnMove,
+  } = useCrossColumnDragging({
+    tasksByColumn,
+    setTasksByColumn,
+    columns,
+    originalTasks: tasks,
+    onTasksChange,
   })
 
   const sensors = useSensors(
@@ -134,14 +143,11 @@ export default function KanbanBoard({
         }
       }
 
-      dragStateRef.current = {
-        activeId: active.id as string,
-        sourceColumn,
-        tasksSnapshot: JSON.parse(JSON.stringify(tasksByColumn)),
-        lastTargetColumn: null,
+      if (sourceColumn) {
+        initializeDrag(active.id as string, sourceColumn, tasksByColumn)
       }
     },
-    [tasksByColumn, findTaskByIdSimple]
+    [tasksByColumn, findTaskByIdSimple, initializeDrag]
   )
 
   const handleDragOver = useCallback(
@@ -174,179 +180,36 @@ export default function KanbanBoard({
       // 如果还是找不到目标列或源列无效，不处理
       if (!targetColumnId || !dragState.sourceColumn) return
 
-      // 获取当前状态快照，确保数据一致性
-      const currentTasks = dragState.tasksSnapshot || memoizedTasksByColumn
-      const sourceColumn = dragState.sourceColumn
-      const activeTask = findTaskByIdSimple(activeId, currentTasks)
-      if (!activeTask) return
-
-      // 只在同列内排序时提供即时反馈，跨列移动延迟到handleDragEnd处理
-      if (sourceColumn === targetColumnId) {
-        const targetTasks = [...currentTasks[targetColumnId]]
-        const currentIndex = targetTasks.findIndex(
-          (task) => task.id === activeId
-        )
-        const overIndex = targetTasks.findIndex((task) => task.id === overId)
-
-        // 如果找不到目标任务或位置无效，不更新
-        if (overIndex === -1 || currentIndex === -1) return
-
-        // 性能优化：只有位置真正改变时才更新
-        if (currentIndex !== overIndex) {
-          // 重新排序：移除当前任务，然后插入到目标位置
-          const newTargetTasks = targetTasks.filter(
-            (task) => task.id !== activeId
-          )
-
-          // 计算插入位置
-          let insertIndex = overIndex
-          if (currentIndex < overIndex) {
-            // 如果从上往下拖，插入位置减1（因为已经移除了当前元素）
-            insertIndex = overIndex - 1
-          }
-
-          newTargetTasks.splice(insertIndex, 0, activeTask)
-
-          // 使用批量更新减少重渲染
-          const newTasksByColumn = {
-            ...currentTasks,
-            [targetColumnId]: newTargetTasks,
-          }
-
-          // 在同列内排序时提供即时反馈，确保交互和数据的实时同步
-          setTasksByColumn(newTasksByColumn)
-        }
+      // 区分处理同列排序和跨列移动
+      if (dragState.sourceColumn === targetColumnId) {
+        // 同列内排序：使用同列排序hook
+        handleSameColumnSorting(event, activeId, overId, targetColumnId)
       } else {
-        // 跨列移动时，只记录最后一次目标列，避免重复处理
-        if (dragState.lastTargetColumn !== targetColumnId) {
-          dragState.lastTargetColumn = targetColumnId
-        }
+        // 跨列移动：只记录最后一次目标列，避免重复处理
+        updateTargetColumn(targetColumnId)
       }
-      // 跨列移动不在handleDragOver中处理，只在handleDragEnd中处理
     },
-    [columns, memoizedTasksByColumn, findTaskByIdSimple]
+    [
+      columns,
+      memoizedTasksByColumn,
+      handleSameColumnSorting,
+      updateTargetColumn,
+      dragStateRef,
+    ]
   )
 
   const handleDragEnd = useCallback(
     (event: DragEndEvent) => {
-      const { active, over } = event
-      if (!over) return
-
-      const activeId = active.id as string
-      const overId = over.id as string
       const draggedTask = draggedTaskRef.current
       if (!draggedTask) return
 
-      const dragState = dragStateRef.current
-      const sourceColumn = dragState.sourceColumn
-      if (!sourceColumn) return
-
-      // 确定最终的目标列
-      let targetColumnId = columns.find((col) => col.id === overId)?.id
-
-      // 如果不是列ID，查找overId所在的任务所在列
-      if (!targetColumnId) {
-        for (const [columnId, columnTasks] of Object.entries(
-          memoizedTasksByColumn
-        )) {
-          if (columnTasks.some((task) => task.id === overId)) {
-            targetColumnId = columnId
-            break
-          }
-        }
-      }
-
-      // 如果找不到目标列，则使用源列
-      if (!targetColumnId) {
-        targetColumnId = sourceColumn
-      }
-
-      // 获取当前状态
-      let finalTasksByColumn
-
-      // 区分同列排序和跨列移动
-      if (sourceColumn === targetColumnId) {
-        // 同列内排序：使用当前memoized状态（已通过handleDragOver实时更新）
-        // 确保最终数据与用户看到的视觉效果完全一致
-        finalTasksByColumn = { ...memoizedTasksByColumn }
-      } else {
-        // 跨列移动：使用初始状态快照进行计算
-        const initialTasks = dragState.tasksSnapshot || memoizedTasksByColumn
-
-        const sourceTasks = [...(initialTasks[sourceColumn] || [])]
-        const targetTasks = [...(initialTasks[targetColumnId] || [])]
-
-        // 从源列移除拖拽的任务
-        const newSourceTasks = sourceTasks.filter(
-          (task) => task.id !== activeId
-        )
-
-        // 添加到目标列的合适位置
-        let insertIndex = targetTasks.findIndex((task) => task.id === overId)
-        if (insertIndex === -1) {
-          // 如果没有具体目标任务，添加到末尾
-          insertIndex = targetTasks.length
-        }
-
-        const newTargetTasks = [...targetTasks]
-        newTargetTasks.splice(insertIndex, 0, draggedTask)
-
-        finalTasksByColumn = {
-          ...initialTasks,
-          [sourceColumn]: newSourceTasks,
-          [targetColumnId]: newTargetTasks,
-        }
-      }
-
-      // 更新状态以确保UI显示正确
-      setTasksByColumn(finalTasksByColumn)
-
-      // 从最终的 finalTasksByColumn 状态重建完整的任务列表
-      const newTasks: Task[] = []
-
-      columns.forEach((column) => {
-        const columnTasks = finalTasksByColumn[column.id] || []
-        columnTasks.forEach((task) => {
-          // 找到原始任务数据，保持其他属性
-          const originalTask = tasks.find((t) => t.id === task.id)
-          if (originalTask) {
-            newTasks.push({
-              ...originalTask,
-              // 使用当前列作为状态，反映拖拽后的实际位置
-              status: column.id as Task['status'],
-              // 如果是当前拖拽的任务，更新时间
-              updateTime:
-                task.id === activeId
-                  ? new Date().toISOString()
-                  : originalTask.updateTime,
-            })
-          }
-        })
-      })
-
-      // 添加可能遗漏的任务（理论上不应该有遗漏）
-      tasks.forEach((task) => {
-        if (!newTasks.find((t) => t.id === task.id)) {
-          newTasks.push(task)
-        }
-      })
-
-      if (onTasksChange) {
-        onTasksChange(newTasks)
-      }
+      // 使用跨列拖拽hook处理结束逻辑
+      handleCrossColumnMove(event, draggedTask)
 
       setActiveTask(null)
       draggedTaskRef.current = null
-
-      // 重置拖拽状态
-      dragStateRef.current = {
-        activeId: null,
-        sourceColumn: null,
-        tasksSnapshot: null,
-        lastTargetColumn: null,
-      }
     },
-    [tasks, columns, onTasksChange, memoizedTasksByColumn]
+    [handleCrossColumnMove]
   )
 
   return (
