@@ -1,3 +1,4 @@
+import TaskDetailModal from '@/components/TaskDetailModal'
 import type { Task } from '@/types/Task'
 import type { DragEndEvent, DragOverEvent, DragStartEvent } from '@dnd-kit/core'
 import {
@@ -11,8 +12,8 @@ import {
 } from '@dnd-kit/core'
 import { restrictToWindowEdges } from '@dnd-kit/modifiers'
 import {
-  rectSortingStrategy,
   SortableContext,
+  rectSortingStrategy,
   sortableKeyboardCoordinates,
 } from '@dnd-kit/sortable'
 import { useCallback, useMemo, useRef, useState } from 'react'
@@ -79,6 +80,8 @@ export default function KanbanBoard({
 
   const [activeTask, setActiveTask] = useState<Task | null>(null)
   const draggedTaskRef = useRef<Task | null>(null)
+  const [editingTask, setEditingTask] = useState<Task | null>(null)
+  const [modalVisible, setModalVisible] = useState(false)
 
   // 简化的查找函数，不依赖状态，避免循环依赖
   const findTaskByIdSimple = useCallback(
@@ -115,6 +118,49 @@ export default function KanbanBoard({
     originalTasks: tasks,
     onTasksChange,
   })
+
+  // 处理任务更新
+  const handleTaskUpdate = useCallback(
+    (updatedTask: Task) => {
+      if (onTasksChange) {
+        const updatedTasks = tasks.map((task) =>
+          task.id === updatedTask.id ? updatedTask : task
+        )
+        onTasksChange(updatedTasks)
+      }
+
+      // 更新本地状态
+      const columnId = getColumnByStatus(updatedTask.status)
+      setTasksByColumn((prev) => ({
+        ...prev,
+        [columnId]:
+          prev[columnId]?.map((task) =>
+            task.id === updatedTask.id ? updatedTask : task
+          ) || [],
+      }))
+    },
+    [tasks, onTasksChange, getColumnByStatus]
+  )
+
+  // 打开编辑弹窗
+  const handleEditTask = useCallback((task: Task) => {
+    setEditingTask(task)
+    setModalVisible(true)
+  }, [])
+
+  // 关闭弹窗
+  const handleModalClose = useCallback(() => {
+    setModalVisible(false)
+    setEditingTask(null)
+  }, [])
+
+  // 保存任务
+  const handleSaveTask = useCallback(
+    (updatedTask: Task) => {
+      handleTaskUpdate(updatedTask)
+    },
+    [handleTaskUpdate]
+  )
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -239,6 +285,7 @@ export default function KanbanBoard({
                 title={column.title}
                 tasks={tasksByColumn[column.id] || []}
                 color={column.color}
+                onEditTask={handleEditTask}
               />
             ))}
           </div>
@@ -257,6 +304,13 @@ export default function KanbanBoard({
           ) : null}
         </DragOverlay>
       </DndContext>
+
+      <TaskDetailModal
+        visible={modalVisible}
+        task={editingTask}
+        onClose={handleModalClose}
+        onSave={handleSaveTask}
+      />
     </div>
   )
 }

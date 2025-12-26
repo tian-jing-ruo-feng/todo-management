@@ -6,11 +6,13 @@ import { Card } from 'antd'
 interface KanbanItemProps {
   task: Task
   isDragging?: boolean // 拖拽浮层中的状态
+  onEdit?: (task: Task) => void // 添加编辑回调
 }
 
 export default function KanbanItem({
   task,
   isDragging: isOverlayDragging = false,
+  onEdit,
 }: KanbanItemProps) {
   const {
     attributes,
@@ -60,6 +62,7 @@ export default function KanbanItem({
             ? 'cursor-grabbing scale-105'
             : 'cursor-grab hover:scale-[1.01]'
       }`}
+      onClick={() => onEdit?.(task)}
     >
       <Card
         size="small"

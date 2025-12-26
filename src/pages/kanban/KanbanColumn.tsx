@@ -11,6 +11,7 @@ interface KanbanColumnProps {
   title: string
   tasks: Task[]
   color?: string
+  onEditTask?: (task: Task) => void
 }
 
 export default function KanbanColumn({
@@ -18,6 +19,7 @@ export default function KanbanColumn({
   title,
   tasks,
   color = '#1890ff',
+  onEditTask,
 }: KanbanColumnProps) {
   const { setNodeRef, isOver } = useDroppable({
     id,
@@ -65,7 +67,7 @@ export default function KanbanColumn({
             strategy={verticalListSortingStrategy}
           >
             {tasks.map((task) => (
-              <KanbanItem key={task.id} task={task} />
+              <KanbanItem key={task.id} task={task} onEdit={onEditTask} />
             ))}
           </SortableContext>
 
