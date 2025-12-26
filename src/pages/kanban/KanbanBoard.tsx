@@ -1,3 +1,4 @@
+import TaskCreateModal from '@/components/TaskCreateModal'
 import TaskDetailModal from '@/components/TaskDetailModal'
 import type { Task } from '@/types/Task'
 import type { DragEndEvent, DragOverEvent, DragStartEvent } from '@dnd-kit/core'
@@ -82,6 +83,8 @@ export default function KanbanBoard({
   const draggedTaskRef = useRef<Task | null>(null)
   const [editingTask, setEditingTask] = useState<Task | null>(null)
   const [modalVisible, setModalVisible] = useState(false)
+  const [createModalVisible, setCreateModalVisible] = useState(false)
+  const [defaultColumnId, setDefaultColumnId] = useState<string>('todo')
 
   // 简化的查找函数，不依赖状态，避免循环依赖
   const findTaskByIdSimple = useCallback(
@@ -129,15 +132,26 @@ export default function KanbanBoard({
         onTasksChange(updatedTasks)
       }
 
-      // 更新本地状态
-      const columnId = getColumnByStatus(updatedTask.status)
-      setTasksByColumn((prev) => ({
-        ...prev,
-        [columnId]:
-          prev[columnId]?.map((task) =>
-            task.id === updatedTask.id ? updatedTask : task
-          ) || [],
-      }))
+      // 更新本地状态 - 处理跨列移动
+      setTasksByColumn((prev) => {
+        const newTasksByColumn = { ...prev }
+        
+        // 首先从所有列中移除原任务
+        Object.keys(newTasksByColumn).forEach(columnId => {
+          newTasksByColumn[columnId] = newTasksByColumn[columnId].filter(
+            task => task.id !== updatedTask.id
+          )
+        })
+        
+        // 然后将更新后的任务添加到正确的列中
+        const targetColumnId = getColumnByStatus(updatedTask.status)
+        if (!newTasksByColumn[targetColumnId]) {
+          newTasksByColumn[targetColumnId] = []
+        }
+        newTasksByColumn[targetColumnId].push(updatedTask)
+        
+        return newTasksByColumn
+      })
     },
     [tasks, onTasksChange, getColumnByStatus]
   )
@@ -160,6 +174,36 @@ export default function KanbanBoard({
       handleTaskUpdate(updatedTask)
     },
     [handleTaskUpdate]
+  )
+
+  // 打开新增任务弹窗
+  const handleAddTask = useCallback((columnId: string) => {
+    setDefaultColumnId(columnId)
+    setCreateModalVisible(true)
+  }, [])
+
+  // 关闭新增任务弹窗
+  const handleCreateModalClose = useCallback(() => {
+    setCreateModalVisible(false)
+    setDefaultColumnId('todo')
+  }, [])
+
+  // 创建新任务
+  const handleCreateTask = useCallback(
+    (newTask: Task) => {
+      if (onTasksChange) {
+        const updatedTasks = [...tasks, newTask]
+        onTasksChange(updatedTasks)
+      }
+
+      // 更新本地状态
+      const columnId = getColumnByStatus(newTask.status)
+      setTasksByColumn((prev) => ({
+        ...prev,
+        [columnId]: [...(prev[columnId] || []), newTask],
+      }))
+    },
+    [tasks, onTasksChange, getColumnByStatus]
   )
 
   const sensors = useSensors(
@@ -286,6 +330,7 @@ export default function KanbanBoard({
                 tasks={tasksByColumn[column.id] || []}
                 color={column.color}
                 onEditTask={handleEditTask}
+                onAddTask={handleAddTask}
               />
             ))}
           </div>
@@ -310,6 +355,13 @@ export default function KanbanBoard({
         task={editingTask}
         onClose={handleModalClose}
         onSave={handleSaveTask}
+      />
+
+      <TaskCreateModal
+        visible={createModalVisible}
+        defaultStatus={defaultColumnId}
+        onClose={handleCreateModalClose}
+        onSave={handleCreateTask}
       />
     </div>
   )

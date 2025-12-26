@@ -1,7 +1,8 @@
 import type { Task } from '@/types/Task'
+import { PlusOutlined } from '@ant-design/icons'
 import { useDroppable } from '@dnd-kit/core'
 import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable'
-import { Card, Typography } from 'antd'
+import { Button, Card, Typography } from 'antd'
 import KanbanItem from './KanbanItem'
 
 const { Title } = Typography
@@ -12,6 +13,7 @@ interface KanbanColumnProps {
   tasks: Task[]
   color?: string
   onEditTask?: (task: Task) => void
+  onAddTask?: (columnId: string) => void
 }
 
 export default function KanbanColumn({
@@ -20,6 +22,7 @@ export default function KanbanColumn({
   tasks,
   color = '#1890ff',
   onEditTask,
+  onAddTask,
 }: KanbanColumnProps) {
   const { setNodeRef, isOver } = useDroppable({
     id,
@@ -52,6 +55,16 @@ export default function KanbanColumn({
               {tasks.length}
             </span>
           </div>
+        }
+        extra={
+          <Button
+            type="primary"
+            icon={<PlusOutlined />}
+            size="small"
+            onClick={() => onAddTask?.(id)}
+            shape="circle"
+            title="添加任务"
+          />
         }
       >
         <div

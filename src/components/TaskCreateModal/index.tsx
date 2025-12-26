@@ -1,58 +1,48 @@
-import React from 'react'
 import type { Task } from '@/types/Task'
 import { Form, Input, Modal, Select } from 'antd'
 import { useState } from 'react'
 import RichTextEditor from '../RichTextEditor'
 
-interface TaskDetailModalProps {
+interface TaskCreateModalProps {
   visible: boolean
-  task: Task | null
+  defaultStatus?: string
   onClose: () => void
   onSave: (task: Task) => void
 }
 
-export default function TaskDetailModal({
+export default function TaskCreateModal({
   visible,
-  task,
+  defaultStatus = 'todo',
   onClose,
   onSave,
-}: TaskDetailModalProps) {
+}: TaskCreateModalProps) {
   const [form] = Form.useForm()
   const [content, setContent] = useState('')
   const [loading, setLoading] = useState(false)
-
-  // 当任务改变时，更新表单和内容
-  React.useEffect(() => {
-    if (task) {
-      form.setFieldsValue({
-        name: task.name,
-        status: task.status,
-        priority: task.priority,
-      })
-      setContent(task.content || '')
-    } else {
-      form.resetFields()
-      setContent('')
-    }
-  }, [task, form])
 
   const handleOk = async () => {
     try {
       setLoading(true)
       const values = await form.validateFields()
-      
-      if (task) {
-        const updatedTask: Task = {
-          ...task,
-          ...values,
-          content,
-          updateTime: new Date().toISOString(),
-        }
-        onSave(updatedTask)
-        onClose()
+
+      const newTask: Task = {
+        id: `task_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+        name: values.name,
+        status: values.status || defaultStatus,
+        priority: values.priority || 'medium',
+        content,
+        createTime: new Date().toISOString(),
+        updateTime: new Date().toISOString(),
+        isRemoved: false,
+        isTop: false,
       }
+
+      onSave(newTask)
+      form.resetFields()
+      setContent('')
+      onClose()
     } catch (error) {
-      console.error('保存任务失败:', error)
+      console.error('创建任务失败:', error)
     } finally {
       setLoading(false)
     }
@@ -66,21 +56,21 @@ export default function TaskDetailModal({
 
   return (
     <Modal
-      title="编辑任务详情"
+      title="新增任务"
       open={visible}
       onOk={handleOk}
       onCancel={handleCancel}
       width={800}
-      okText="保存"
+      okText="创建"
       cancelText="取消"
       confirmLoading={loading}
-      destroyOnClose
     >
       <Form
         form={form}
         layout="vertical"
         initialValues={{
-          ...task,
+          status: defaultStatus,
+          priority: 'medium',
         }}
       >
         <Form.Item
@@ -92,7 +82,7 @@ export default function TaskDetailModal({
         </Form.Item>
 
         <Form.Item name="status" label="状态">
-          <Select>
+          <Select placeholder="选择任务状态">
             <Select.Option value="todo">待办</Select.Option>
             <Select.Option value="in-progress">进行中</Select.Option>
             <Select.Option value="review">待审核</Select.Option>
@@ -101,7 +91,7 @@ export default function TaskDetailModal({
         </Form.Item>
 
         <Form.Item name="priority" label="优先级">
-          <Select>
+          <Select placeholder="选择优先级">
             <Select.Option value="low">低</Select.Option>
             <Select.Option value="medium">中</Select.Option>
             <Select.Option value="high">高</Select.Option>
