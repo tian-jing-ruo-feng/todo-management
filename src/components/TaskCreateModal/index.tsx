@@ -1,7 +1,9 @@
 import type { Task } from '@/types/Task'
-import { Form, Input, Modal, Select } from 'antd'
-import { useState } from 'react'
+import { Form, Input, Modal, Select, Switch } from 'antd'
+import { useState, useEffect } from 'react'
 import RichTextEditor from '../RichTextEditor'
+import DateTimePicker from '../DateTimePicker'
+import { getStatusOptions, getPriorityOptions } from '@/utils/taskHelpers'
 
 interface TaskCreateModalProps {
   visible: boolean
@@ -12,13 +14,20 @@ interface TaskCreateModalProps {
 
 export default function TaskCreateModal({
   visible,
-  defaultStatus = 'todo',
+  defaultStatus = 'status_1',
   onClose,
   onSave,
 }: TaskCreateModalProps) {
   const [form] = Form.useForm()
   const [content, setContent] = useState('')
   const [loading, setLoading] = useState(false)
+  const [statusOptions, setStatusOptions] = useState<any[]>([])
+  const [priorityOptions, setPriorityOptions] = useState<any[]>([])
+
+  useEffect(() => {
+    setStatusOptions(getStatusOptions())
+    setPriorityOptions(getPriorityOptions())
+  }, [])
 
   const handleOk = async () => {
     try {
@@ -26,15 +35,17 @@ export default function TaskCreateModal({
       const values = await form.validateFields()
 
       const newTask: Task = {
-        id: `task_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+        id: `task_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`,
         name: values.name,
         status: values.status || defaultStatus,
-        priority: values.priority || 'medium',
+        priority: values.priority || 'priority_2',
         content,
         createTime: new Date().toISOString(),
         updateTime: new Date().toISOString(),
         isRemoved: false,
-        isTop: false,
+        isTop: values.isTop || false,
+        expectStartTime: values.expectStartTime || null,
+        expectEndTime: values.expectEndTime || null,
       }
 
       onSave(newTask)
@@ -70,7 +81,8 @@ export default function TaskCreateModal({
         layout="vertical"
         initialValues={{
           status: defaultStatus,
-          priority: 'medium',
+          priority: 'priority_2',
+          isTop: false,
         }}
       >
         <Form.Item
@@ -83,20 +95,34 @@ export default function TaskCreateModal({
 
         <Form.Item name="status" label="状态">
           <Select placeholder="选择任务状态">
-            <Select.Option value="todo">待办</Select.Option>
-            <Select.Option value="in-progress">进行中</Select.Option>
-            <Select.Option value="review">待审核</Select.Option>
-            <Select.Option value="done">已完成</Select.Option>
+            {statusOptions.map((status) => (
+              <Select.Option key={status.id} value={status.id}>
+                <span style={{ color: status.color }}>●</span> {status.name}
+              </Select.Option>
+            ))}
           </Select>
         </Form.Item>
 
         <Form.Item name="priority" label="优先级">
           <Select placeholder="选择优先级">
-            <Select.Option value="low">低</Select.Option>
-            <Select.Option value="medium">中</Select.Option>
-            <Select.Option value="high">高</Select.Option>
-            <Select.Option value="urgent">紧急</Select.Option>
+            {priorityOptions.map((priority) => (
+              <Select.Option key={priority.id} value={priority.id}>
+                <span style={{ color: priority.color }}>●</span> {priority.name}
+              </Select.Option>
+            ))}
           </Select>
+        </Form.Item>
+
+        <Form.Item name="expectStartTime" label="期望开始时间">
+          <DateTimePicker placeholder="选择期望开始时间" />
+        </Form.Item>
+
+        <Form.Item name="expectEndTime" label="期望结束时间">
+          <DateTimePicker placeholder="选择期望结束时间" />
+        </Form.Item>
+
+        <Form.Item name="isTop" label="是否置顶" valuePropName="checked">
+          <Switch />
         </Form.Item>
 
         <Form.Item label="任务内容">

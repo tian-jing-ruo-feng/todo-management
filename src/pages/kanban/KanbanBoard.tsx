@@ -48,6 +48,12 @@ export default function KanbanBoard({
 
   const getColumnByStatus = useCallback((status: string): string => {
     const statusMap: Record<string, string> = {
+      'status_1': 'todo',        // 待开始 -> 待办
+      'status_2': 'in-progress', // 进行中 -> 进行中
+      'status_3': 'done',        // 已完成 -> 已完成
+      'status_4': 'review',      // 已延期 -> 待审核
+      'status_5': 'todo',        // 已取消 -> 待办
+      // 兼容旧的status值
       todo: 'todo',
       pending: 'todo',
       'in-progress': 'in-progress',
@@ -84,7 +90,7 @@ export default function KanbanBoard({
   const [editingTask, setEditingTask] = useState<Task | null>(null)
   const [modalVisible, setModalVisible] = useState(false)
   const [createModalVisible, setCreateModalVisible] = useState(false)
-  const [defaultColumnId, setDefaultColumnId] = useState<string>('todo')
+  const [defaultColumnId, setDefaultColumnId] = useState<string>('status_1')
 
   // 简化的查找函数，不依赖状态，避免循环依赖
   const findTaskByIdSimple = useCallback(
@@ -176,16 +182,28 @@ export default function KanbanBoard({
     [handleTaskUpdate]
   )
 
+  // 列ID到Status ID的映射
+  const getColumnToStatusMap = useCallback(() => {
+    return {
+      'todo': 'status_1',      // 待开始
+      'in-progress': 'status_2', // 进行中
+      'review': 'status_3',     // 已完成（作为审核状态）
+      'done': 'status_3',       // 已完成
+    }
+  }, [])
+
   // 打开新增任务弹窗
   const handleAddTask = useCallback((columnId: string) => {
-    setDefaultColumnId(columnId)
+    const statusMap = getColumnToStatusMap()
+    const defaultStatus = statusMap[columnId as keyof typeof statusMap] || 'status_1'
+    setDefaultColumnId(defaultStatus)
     setCreateModalVisible(true)
-  }, [])
+  }, [getColumnToStatusMap])
 
   // 关闭新增任务弹窗
   const handleCreateModalClose = useCallback(() => {
     setCreateModalVisible(false)
-    setDefaultColumnId('todo')
+    setDefaultColumnId('status_1')
   }, [])
 
   // 创建新任务

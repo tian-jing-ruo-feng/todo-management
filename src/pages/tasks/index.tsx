@@ -130,16 +130,16 @@ const columns: TableProps<Task>['columns'] = [
   },
   {
     title: '期望开始时间',
-    dataIndex: 'expectStartTime',
-    key: 'expectStartTime',
+    dataIndex: 'expectedStartTime',
+    key: 'expectedStartTime',
     width: 180,
     render: (time: string) =>
       time ? dayjs(time).format('YYYY-MM-DD HH:mm:ss') : '-',
   },
   {
     title: '期望结束时间',
-    dataIndex: 'expectEndTime',
-    key: 'expectEndTime',
+    dataIndex: 'expectedEndTime',
+    key: 'expectedEndTime',
     width: 180,
     render: (time: string) =>
       time ? dayjs(time).format('YYYY-MM-DD HH:mm:ss') : '-',
