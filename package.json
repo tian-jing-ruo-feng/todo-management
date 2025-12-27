@@ -11,7 +11,8 @@
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
     "lint:format": "eslint . --fix && prettier --write .",
-    "preview": "rsbuild preview"
+    "preview": "rsbuild preview",
+    "deploy": "pnpm run build && gh-pages -d dist"
   },
   "dependencies": {
     "@ant-design/icons": "~6.1.0",
@@ -40,6 +41,7 @@
     "eslint-plugin-prettier": "^5.5.4",
     "eslint-plugin-react-hooks": "^7.0.1",
     "eslint-plugin-react-refresh": "^0.4.24",
+    "gh-pages": "^6.3.0",
     "globals": "^16.5.0",
     "prettier": "^3.7.3",
     "tailwindcss": "^4.1.18",

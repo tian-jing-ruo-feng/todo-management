@@ -8,4 +8,8 @@ export default defineConfig({
       '@': './src',
     },
   },
+  output: {
+    assetPrefix:
+      process.env.NODE_ENV === 'production' ? '/todo-management/' : '/',
+  },
 })
