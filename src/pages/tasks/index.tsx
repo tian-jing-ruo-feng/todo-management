@@ -184,10 +184,14 @@ export default function Tasks() {
   }
 
   return (
-    <div className="flex flex-col gap-3 p-3">
+    <div className="flex flex-col gap-3 p-3 size-full overflow-hidden">
       <TaskStatistc></TaskStatistc>
       <SelectTab onChange={handleSelectTabChange}></SelectTab>
-      {selectTab?.key === 'kanban' && <KanbanPage></KanbanPage>}
+      {selectTab?.key === 'kanban' && (
+        <div className="flex-1 size-full overflow-y-auto">
+          <KanbanPage></KanbanPage>
+        </div>
+      )}
 
       {selectTab?.key === 'priority' && (
         <Table<Task>

@@ -48,11 +48,11 @@ export default function KanbanBoard({
 
   const getColumnByStatus = useCallback((status: string): string => {
     const statusMap: Record<string, string> = {
-      'status_1': 'todo',        // 待开始 -> 待办
-      'status_2': 'in-progress', // 进行中 -> 进行中
-      'status_3': 'done',        // 已完成 -> 已完成
-      'status_4': 'review',      // 已延期 -> 待审核
-      'status_5': 'todo',        // 已取消 -> 待办
+      status_1: 'todo', // 待开始 -> 待办
+      status_2: 'in-progress', // 进行中 -> 进行中
+      status_3: 'done', // 已完成 -> 已完成
+      status_4: 'review', // 已延期 -> 待审核
+      status_5: 'todo', // 已取消 -> 待办
       // 兼容旧的status值
       todo: 'todo',
       pending: 'todo',
@@ -141,21 +141,21 @@ export default function KanbanBoard({
       // 更新本地状态 - 处理跨列移动
       setTasksByColumn((prev) => {
         const newTasksByColumn = { ...prev }
-        
+
         // 首先从所有列中移除原任务
-        Object.keys(newTasksByColumn).forEach(columnId => {
+        Object.keys(newTasksByColumn).forEach((columnId) => {
           newTasksByColumn[columnId] = newTasksByColumn[columnId].filter(
-            task => task.id !== updatedTask.id
+            (task) => task.id !== updatedTask.id
           )
         })
-        
+
         // 然后将更新后的任务添加到正确的列中
         const targetColumnId = getColumnByStatus(updatedTask.status)
         if (!newTasksByColumn[targetColumnId]) {
           newTasksByColumn[targetColumnId] = []
         }
         newTasksByColumn[targetColumnId].push(updatedTask)
-        
+
         return newTasksByColumn
       })
     },
@@ -185,20 +185,24 @@ export default function KanbanBoard({
   // 列ID到Status ID的映射
   const getColumnToStatusMap = useCallback(() => {
     return {
-      'todo': 'status_1',      // 待开始
+      todo: 'status_1', // 待开始
       'in-progress': 'status_2', // 进行中
-      'review': 'status_3',     // 已完成（作为审核状态）
-      'done': 'status_3',       // 已完成
+      review: 'status_3', // 已完成（作为审核状态）
+      done: 'status_3', // 已完成
     }
   }, [])
 
   // 打开新增任务弹窗
-  const handleAddTask = useCallback((columnId: string) => {
-    const statusMap = getColumnToStatusMap()
-    const defaultStatus = statusMap[columnId as keyof typeof statusMap] || 'status_1'
-    setDefaultColumnId(defaultStatus)
-    setCreateModalVisible(true)
-  }, [getColumnToStatusMap])
+  const handleAddTask = useCallback(
+    (columnId: string) => {
+      const statusMap = getColumnToStatusMap()
+      const defaultStatus =
+        statusMap[columnId as keyof typeof statusMap] || 'status_1'
+      setDefaultColumnId(defaultStatus)
+      setCreateModalVisible(true)
+    },
+    [getColumnToStatusMap]
+  )
 
   // 关闭新增任务弹窗
   const handleCreateModalClose = useCallback(() => {
