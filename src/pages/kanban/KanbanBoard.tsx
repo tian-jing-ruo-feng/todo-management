@@ -325,11 +325,11 @@ export default function KanbanBoard({
   )
 
   return (
-    <div className="p-6 bg-gray-50 min-h-screen">
-      <div className="mb-6">
+    <div className="p-2 bg-gray-50 size-full overflow-hidden">
+      {/* <div className="mb-6">
         <h1 className="text-2xl font-bold text-gray-800 mb-2">任务看板</h1>
         <p className="text-gray-600">拖拽任务卡片来改变状态和顺序</p>
-      </div>
+      </div> */}
 
       <DndContext
         sensors={sensors}
@@ -343,7 +343,7 @@ export default function KanbanBoard({
           items={columns.map((col) => col.id)}
           strategy={rectSortingStrategy}
         >
-          <div className="flex gap-4 overflow-x-auto pb-4">
+          <div className="flex gap-4 overflow-x-auto pb-4 size-full overflow-hidden">
             {columns.map((column) => (
               <KanbanColumn
                 key={column.id}
