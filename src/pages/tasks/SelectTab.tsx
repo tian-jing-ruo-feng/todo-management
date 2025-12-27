@@ -21,12 +21,12 @@ export interface SelectTabProps {
 export default function SelectTab(props: SelectTabProps) {
   const [buttons, setButtons] = useState<ButtonItem[]>([
     // 优先级视图
-    {
-      title: '优先级视图',
-      key: 'priority',
-      icon: <ToTopOutlined />,
-      isActive: false,
-    },
+    // {
+    //   title: '优先级视图',
+    //   key: 'priority',
+    //   icon: <ToTopOutlined />,
+    //   isActive: false,
+    // },
 
     {
       title: '看板视图',
@@ -35,19 +35,19 @@ export default function SelectTab(props: SelectTabProps) {
       isActive: true,
     },
 
-    {
-      title: '时间视图',
-      key: 'time',
-      icon: <ClockCircleOutlined />,
-      isActive: false,
-    },
+    // {
+    //   title: '时间视图',
+    //   key: 'time',
+    //   icon: <ClockCircleOutlined />,
+    //   isActive: false,
+    // },
 
-    {
-      title: '负责人视图',
-      key: 'assignee',
-      icon: <UserOutlined />,
-      isActive: false,
-    },
+    // {
+    //   title: '负责人视图',
+    //   key: 'assignee',
+    //   icon: <UserOutlined />,
+    //   isActive: false,
+    // },
   ])
 
   const handleClick = (ind: number) => () => {
@@ -61,7 +61,7 @@ export default function SelectTab(props: SelectTabProps) {
   // 初始化时设置第一个按钮为激活状态
   useEffect(() => {
     if (props.onChange) {
-      props.onChange(buttons[1])
+      props.onChange(buttons[0])
     }
   }, [])
   return (

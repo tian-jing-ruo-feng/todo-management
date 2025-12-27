@@ -185,10 +185,10 @@ export default function Tasks() {
 
   return (
     <div className="flex flex-col gap-3 p-3 size-full overflow-hidden">
-      <TaskStatistc></TaskStatistc>
+      {/* <TaskStatistc></TaskStatistc> */}
       <SelectTab onChange={handleSelectTabChange}></SelectTab>
       {selectTab?.key === 'kanban' && (
-        <div className="flex-1 size-full overflow-y-auto">
+        <div className="flex-1 size-full overflow-auto">
           <KanbanPage></KanbanPage>
         </div>
       )}
