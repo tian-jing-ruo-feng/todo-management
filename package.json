@@ -25,6 +25,7 @@
     "@types/node": "^25.0.3",
     "antd": "^6.1.1",
     "dayjs": "^1.11.19",
+    "dexie": "^4.2.1",
     "react": "^19.2.3",
     "react-dom": "^19.2.3",
     "tiptap-markdown": "^0.7.4"

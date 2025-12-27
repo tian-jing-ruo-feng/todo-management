@@ -1,6 +1,7 @@
 import type { Task } from '@/types/Task'
 import type { DragEndEvent } from '@dnd-kit/core'
 import { useCallback, useRef } from 'react'
+import { saveTask } from '@/utils/db'
 
 interface DragState {
   activeId: string | null
@@ -156,6 +157,9 @@ export function useCrossColumnDragging({
         onTasksChange(newTasks)
       }
 
+      // 异步保存所有任务到数据库（不阻塞UI）
+      saveTaskChanges(newTasks)
+
       // 重置拖拽状态
       dragStateRef.current = {
         activeId: null,
@@ -168,6 +172,17 @@ export function useCrossColumnDragging({
     },
     [tasksByColumn, setTasksByColumn, columns, originalTasks, onTasksChange]
   )
+
+  // 异步保存任务变更
+  const saveTaskChanges = async (tasks: Task[]) => {
+    try {
+      for (const task of tasks) {
+        await saveTask(task)
+      }
+    } catch (error) {
+      console.error('保存任务状态失败:', error)
+    }
+  }
 
   return {
     dragStateRef,

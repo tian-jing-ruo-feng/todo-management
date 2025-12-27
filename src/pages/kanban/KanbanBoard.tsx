@@ -17,7 +17,8 @@ import {
   rectSortingStrategy,
   sortableKeyboardCoordinates,
 } from '@dnd-kit/sortable'
-import { useCallback, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { saveTask } from '@/utils/db'
 import KanbanColumn from './KanbanColumn'
 import KanbanItem from './KanbanItem'
 import { useCrossColumnDragging, useSameColumnSorting } from './hooks'
@@ -85,6 +86,24 @@ export default function KanbanBoard({
     }
   )
 
+  // 当 tasks prop 发生变化时，重新计算 tasksByColumn
+  useEffect(() => {
+    const grouped: Record<string, Task[]> = {}
+    columns.forEach((col) => {
+      grouped[col.id] = []
+    })
+
+    // 根据任务状态分配到不同列
+    tasks.forEach((task) => {
+      const columnId = getColumnByStatus(task.status)
+      if (grouped[columnId]) {
+        grouped[columnId].push(task)
+      }
+    })
+
+    setTasksByColumn(grouped)
+  }, [tasks, columns, getColumnByStatus])
+
   const [activeTask, setActiveTask] = useState<Task | null>(null)
   const draggedTaskRef = useRef<Task | null>(null)
   const [editingTask, setEditingTask] = useState<Task | null>(null)
@@ -130,7 +149,14 @@ export default function KanbanBoard({
 
   // 处理任务更新
   const handleTaskUpdate = useCallback(
-    (updatedTask: Task) => {
+    async (updatedTask: Task) => {
+      // 保存到数据库
+      try {
+        await saveTask(updatedTask)
+      } catch (error) {
+        console.error('保存任务失败:', error)
+      }
+
       if (onTasksChange) {
         const updatedTasks = tasks.map((task) =>
           task.id === updatedTask.id ? updatedTask : task
@@ -212,7 +238,14 @@ export default function KanbanBoard({
 
   // 创建新任务
   const handleCreateTask = useCallback(
-    (newTask: Task) => {
+    async (newTask: Task) => {
+      // 保存到数据库
+      try {
+        await saveTask(newTask)
+      } catch (error) {
+        console.error('创建任务失败:', error)
+      }
+
       if (onTasksChange) {
         const updatedTasks = [...tasks, newTask]
         onTasksChange(updatedTasks)

@@ -38,6 +38,9 @@ importers:
       dayjs:
         specifier: ^1.11.19
         version: 1.11.19
+      dexie:
+        specifier: ^4.2.1
+        version: 4.2.1
       react:
         specifier: ^19.2.3
         version: 19.2.3
@@ -1174,6 +1177,9 @@ packages:
   detect-libc@2.1.2:
     resolution: {integrity: sha512-Btj2BOOO83o3WyH59e8MgXsxEQVcarkUOpEYrubB0urwnN10yQ364rsiByU11nZlqWYZm05i/of7io4mzihBtQ==}
     engines: {node: '>=8'}
+
+  dexie@4.2.1:
+    resolution: {integrity: sha512-Ckej0NS6jxQ4Po3OrSQBFddayRhTCic2DoCAG5zacOfOVB9P2Q5Xc5uL/nVa7ZVs+HdMnvUPzLFCB/JwpB6Csg==}
 
   dir-glob@3.0.1:
     resolution: {integrity: sha512-WkrWp9GR4KXfKGYzOLmTuGVi1UWFfws377n9cc55/tb6DuqyF6pcQ5AbiHEshaDpY9v6oaSr2XCDidGmMwdzIA==}
@@ -3219,6 +3225,8 @@ snapshots:
   deep-is@0.1.4: {}
 
   detect-libc@2.1.2: {}
+
+  dexie@4.2.1: {}
 
   dir-glob@3.0.1:
     dependencies:
