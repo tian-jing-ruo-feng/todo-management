@@ -22,8 +22,12 @@ export default function TaskDetailModal({
   const [form] = Form.useForm()
   const [content, setContent] = useState('')
   const [loading, setLoading] = useState(false)
-  const [statusOptions, setStatusOptions] = useState<any[]>([])
-  const [priorityOptions, setPriorityOptions] = useState<any[]>([])
+  const [statusOptions, setStatusOptions] = useState<
+    Array<{ id: string; name: string; color: string }>
+  >([])
+  const [priorityOptions, setPriorityOptions] = useState<
+    Array<{ id: string; name: string; color: string }>
+  >([])
 
   useEffect(() => {
     setStatusOptions(getStatusOptions())
@@ -32,7 +36,8 @@ export default function TaskDetailModal({
 
   // 当任务改变时，更新表单和内容
   React.useEffect(() => {
-    if (task) {
+    if (task && visible) {
+      // 只有在 Modal 可见且有任务时才设置表单值
       form.setFieldsValue({
         name: task.name,
         status: task.status,
@@ -42,17 +47,22 @@ export default function TaskDetailModal({
         expectEndTime: task.expectEndTime,
       })
       setContent(task.content || '')
-    } else {
+    }
+  }, [task, form, visible])
+
+  // 当 Modal 关闭时重置表单
+  React.useEffect(() => {
+    if (!visible) {
       form.resetFields()
       setContent('')
     }
-  }, [task, form])
+  }, [visible, form])
 
   const handleOk = async () => {
     try {
       setLoading(true)
       const values = await form.validateFields()
-      
+
       if (task) {
         const updatedTask: Task = {
           ...task,
@@ -71,7 +81,6 @@ export default function TaskDetailModal({
   }
 
   const handleCancel = () => {
-    form.resetFields()
     setContent('')
     onClose()
   }
@@ -86,14 +95,12 @@ export default function TaskDetailModal({
       okText="保存"
       cancelText="取消"
       confirmLoading={loading}
-      destroyOnClose
+      destroyOnHidden
     >
       <Form
         form={form}
         layout="vertical"
-        initialValues={{
-          ...task,
-        }}
+        // 移除 initialValues，让 useEffect 控制表单值
       >
         <Form.Item
           name="name"

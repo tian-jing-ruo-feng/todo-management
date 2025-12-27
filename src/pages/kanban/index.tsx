@@ -12,7 +12,7 @@ export default function KanbanPage() {
       try {
         // 初始化数据库并添加示例数据（如果数据库为空）
         await initDatabaseWithSampleData(mockTasks as Task[])
-        
+
         // 从数据库加载所有任务
         const allTasks = await getAllTasks()
         setTasks(allTasks)

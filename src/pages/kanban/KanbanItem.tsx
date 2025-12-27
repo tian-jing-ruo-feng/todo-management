@@ -1,7 +1,8 @@
 import type { Task } from '@/types/Task'
+import { DeleteOutlined } from '@ant-design/icons'
 import { useSortable } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
-import { Card } from 'antd'
+import { Button, Card } from 'antd'
 import dayjs from 'dayjs'
 import 'dayjs/locale/zh-cn'
 import relativeTime from 'dayjs/plugin/relativeTime'
@@ -14,12 +15,14 @@ interface KanbanItemProps {
   task: Task
   isDragging?: boolean // 拖拽浮层中的状态
   onEdit?: (task: Task) => void // 添加编辑回调
+  onDelete?: (task: Task) => void // 添加删除回调
 }
 
 export default function KanbanItem({
   task,
   isDragging: isOverlayDragging = false,
   onEdit,
+  onDelete,
 }: KanbanItemProps) {
   const {
     attributes,
@@ -54,6 +57,18 @@ export default function KanbanItem({
       default:
         return 'text-gray-500'
     }
+  }
+
+  // 安全的HTML内容清理，移除危险标签和属性
+  const sanitizeHTML = (html: string): string => {
+    // 移除script标签、on事件属性、javascript:协议等危险内容
+    return html
+      .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '')
+      .replace(/on\w+="[^"]*"/gi, '')
+      .replace(/on\w+='[^']*'/gi, '')
+      .replace(/javascript:/gi, '')
+      .replace(/vbscript:/gi, '')
+      .replace(/data:/gi, '')
   }
 
   // 检查内容是否包含HTML标签
@@ -108,7 +123,20 @@ export default function KanbanItem({
     >
       <Card
         size="small"
-        title={task.name}
+        title={
+          <div className="flex justify-between items-center">
+            <div>{task.name}</div>
+            <Button
+              danger
+              icon={<DeleteOutlined />}
+              type="link"
+              onClick={(e) => {
+                e.stopPropagation() // 防止触发编辑事件
+                onDelete?.(task)
+              }}
+            ></Button>
+          </div>
+        }
         className={`transition-all duration-200 ${
           isOverlayDragging
             ? 'shadow-2xl border-blue-500 bg-white'
@@ -120,7 +148,9 @@ export default function KanbanItem({
         {task.content && (
           <div className="text-gray-600 text-sm mb-2">
             {isHTMLContent(task.content) ? (
-              <div dangerouslySetInnerHTML={{ __html: task.content }} />
+              <div
+                dangerouslySetInnerHTML={{ __html: sanitizeHTML(task.content) }}
+              />
             ) : (
               <p className="line-clamp-2 leading-relaxed">{task.content}</p>
             )}

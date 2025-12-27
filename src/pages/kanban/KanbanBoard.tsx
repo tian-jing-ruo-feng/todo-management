@@ -18,10 +18,11 @@ import {
   sortableKeyboardCoordinates,
 } from '@dnd-kit/sortable'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { saveTask } from '@/utils/db'
+import { deleteTask, saveTask } from '@/utils/db'
 import KanbanColumn from './KanbanColumn'
 import KanbanItem from './KanbanItem'
 import { useCrossColumnDragging, useSameColumnSorting } from './hooks'
+import { Modal } from 'antd'
 
 interface Column {
   id: string
@@ -101,7 +102,11 @@ export default function KanbanBoard({
       }
     })
 
-    setTasksByColumn(grouped)
+    // 使用 setTimeout 避免同步 setState
+    const timer = setTimeout(() => {
+      setTasksByColumn(grouped)
+    }, 0)
+    return () => clearTimeout(timer)
   }, [tasks, columns, getColumnByStatus])
 
   const [activeTask, setActiveTask] = useState<Task | null>(null)
@@ -123,15 +128,12 @@ export default function KanbanBoard({
     []
   )
 
-  // 记忆化当前任务分布，避免不必要的计算
-  const memoizedTasksByColumn = useMemo(() => tasksByColumn, [tasksByColumn])
-
   // 使用封装的hooks
   const { handleSameColumnSorting } = useSameColumnSorting({
     tasksByColumn,
     setTasksByColumn,
     findTaskById: findTaskByIdSimple,
-    tasksSnapshot: memoizedTasksByColumn, // 实际会在初始化时更新
+    tasksSnapshot: tasksByColumn, // 直接使用当前状态
   })
 
   const {
@@ -213,7 +215,7 @@ export default function KanbanBoard({
     return {
       todo: 'status_1', // 待开始
       'in-progress': 'status_2', // 进行中
-      review: 'status_3', // 已完成（作为审核状态）
+      review: 'status_4', // 待审核
       done: 'status_3', // 已完成
     }
   }, [])
@@ -230,7 +232,41 @@ export default function KanbanBoard({
     [getColumnToStatusMap]
   )
 
-  // 关闭新增任务弹窗
+  // 删除任务，弹出确认删除提示
+  const handleDeleteTask = useCallback(
+    (task: Task) => {
+      Modal.confirm({
+        title: '确认删除任务？',
+        content: '删除后将无法恢复，请确认是否删除。',
+        onOk: async () => {
+          try {
+            await deleteTask(task.id)
+
+            // 更新父组件状态
+            if (onTasksChange) {
+              const updatedTasks = tasks.filter((t) => t.id !== task.id)
+              onTasksChange(updatedTasks)
+            }
+
+            // 更新本地状态
+            setTasksByColumn((prev) => {
+              const newTasksByColumn = { ...prev }
+              Object.keys(newTasksByColumn).forEach((columnId) => {
+                newTasksByColumn[columnId] = newTasksByColumn[columnId].filter(
+                  (t) => t.id !== task.id
+                )
+              })
+              return newTasksByColumn
+            })
+          } catch (error) {
+            console.error('删除任务失败:', error)
+          }
+        },
+      })
+    },
+    [tasks, onTasksChange]
+  )
+
   const handleCreateModalClose = useCallback(() => {
     setCreateModalVisible(false)
     setDefaultColumnId('status_1')
@@ -312,9 +348,7 @@ export default function KanbanBoard({
 
       // 如果不是列ID，查找overId所在的任务所在列
       if (!targetColumnId) {
-        for (const [columnId, columnTasks] of Object.entries(
-          memoizedTasksByColumn
-        )) {
+        for (const [columnId, columnTasks] of Object.entries(tasksByColumn)) {
           if (columnTasks.some((task) => task.id === overId)) {
             targetColumnId = columnId
             break
@@ -336,7 +370,7 @@ export default function KanbanBoard({
     },
     [
       columns,
-      memoizedTasksByColumn,
+      tasksByColumn,
       handleSameColumnSorting,
       updateTargetColumn,
       dragStateRef,
@@ -386,6 +420,7 @@ export default function KanbanBoard({
                 color={column.color}
                 onEditTask={handleEditTask}
                 onAddTask={handleAddTask}
+                onDeleteTask={handleDeleteTask}
               />
             ))}
           </div>
