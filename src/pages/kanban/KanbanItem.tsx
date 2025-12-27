@@ -97,7 +97,7 @@ export default function KanbanItem({
       style={style}
       {...(!isOverlayDragging && attributes)}
       {...(!isOverlayDragging && listeners)}
-      className={`mb-3 transition-all duration-200 ${
+      className={`transition-all duration-200 ${
         isOverlayDragging
           ? 'cursor-grabbing'
           : isSortableDragging
