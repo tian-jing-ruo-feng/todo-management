@@ -29,7 +29,7 @@ export default function KanbanColumn({
   })
 
   return (
-    <div className="flex-1 min-w-[300px] max-w-[350px] h-full min-h-[500px]">
+    <div className="flex-1 min-w-[300px] max-w-[350px] h-full min-h-[500px] relative">
       <Card
         className={`h-full transition-all duration-300 ${
           isOver
@@ -56,20 +56,21 @@ export default function KanbanColumn({
             </span>
           </div>
         }
-        extra={
+      >
+        {/* 固定在标题下方的添加按钮 */}
+        <div className="absolute top-16 left-4 right-4 z-10">
           <Button
             type="primary"
             icon={<PlusOutlined />}
-            size="small"
             onClick={() => onAddTask?.(id)}
-            shape="circle"
-            title="添加任务"
-          />
-        }
-      >
+            className="w-full shadow-md hover:shadow-lg transition-all duration-300"
+          >
+            添加任务
+          </Button>
+        </div>
         <div
-          ref={setNodeRef} // 将拖拽区域设置为除去标题后的内容区域
-          className={`space-y-2 min-h-[400px] p-3 rounded-lg transition-all duration-300 ${
+          ref={setNodeRef} // 将拖拽区域设置为除去标题和按钮后的内容区域
+          className={`space-y-2 min-h-[400px] pt-8 px-3 pb-3 rounded-lg transition-all duration-300 ${
             isOver
               ? 'bg-linear-to-br from-blue-100/40 via-white/30 to-indigo-100/20 border-3 border-dashed border-blue-400'
               : 'bg-gray-50/30'
