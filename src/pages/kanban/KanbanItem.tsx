@@ -69,7 +69,7 @@ export default function KanbanItem({
       setTaskPriority(priority)
     }
     fetchPriority()
-  }, [])
+  }, [task.priority])
 
   useEffect(() => {
     const fetchGroup = async () => {

@@ -161,7 +161,6 @@ export default function KanbanBoard({
   const { handleSameColumnSorting } = useSameColumnSorting({
     tasksByColumn,
     setTasksByColumn,
-    findTaskById: findTaskByIdSimple,
     tasksSnapshot: tasksByColumn, // 直接使用当前状态
     originalTasks: tasks,
     onTasksChange,
@@ -214,6 +213,13 @@ export default function KanbanBoard({
           newTasksByColumn[targetColumnId] = []
         }
         newTasksByColumn[targetColumnId].push(updatedTask)
+
+        // 重新排序该列中的任务（按sort字段倒序）
+        newTasksByColumn[targetColumnId].sort((a, b) => {
+          const sortA = a.sort ?? 0
+          const sortB = b.sort ?? 0
+          return sortB - sortA
+        })
 
         return newTasksByColumn
       })
@@ -291,32 +297,38 @@ export default function KanbanBoard({
   // 创建新任务
   const handleCreateTask = useCallback(
     async (newTask: Task) => {
+      let newTaskWithSort = newTask
       // 保存到数据库
       try {
         // 获取任务总数
         const taskCount = await getAllTasksCount()
-        // 为新任务设置ID
-        const newTaskWithSort = { ...newTask, sort: taskCount + 1 }
+        // 为新任务设置sort字段
+        newTaskWithSort = { ...newTask, sort: taskCount + 1 }
         await saveTask(newTaskWithSort)
       } catch (error) {
         console.error('创建任务失败:', error)
+        return // 如果保存失败，直接返回
       }
 
+      // 更新父组件状态，使用包含sort字段的任务
       if (onTasksChange) {
-        const updatedTasks = [...tasks, newTask]
+        const updatedTasks = [...tasks, newTaskWithSort]
         onTasksChange(updatedTasks)
       }
 
-      // 更新本地状态
-      const columnId = getColumnByStatus(newTask.status)
+      // 更新本地状态，正确添加新任务到对应列中
+      const columnId = getColumnByStatus(newTaskWithSort.status)
       setTasksByColumn((prev) => {
-        const columnTasks = (prev[columnId] || []).map((task, index) => {
-          return { ...task, sort: index + 1 }
-        })
-        return {
-          ...prev,
-          [columnId]: [...columnTasks],
+        const newTasksByColumn = { ...prev }
+        if (!newTasksByColumn[columnId]) {
+          newTasksByColumn[columnId] = []
         }
+        // 将新任务添加到列中，并按sort字段排序
+        newTasksByColumn[columnId] = [
+          ...newTasksByColumn[columnId],
+          newTaskWithSort,
+        ].sort((a, b) => (b.sort ?? 0) - (a.sort ?? 0))
+        return newTasksByColumn
       })
     },
     [tasks, onTasksChange, getColumnByStatus]
