@@ -3,6 +3,17 @@ import type { DragEndEvent } from '@dnd-kit/core'
 import { useCallback, useRef } from 'react'
 import { saveTask } from '@/utils/db'
 
+// 异步保存任务变更
+const saveTaskChanges = async (tasks: Task[]) => {
+  try {
+    for (const task of tasks) {
+      await saveTask(task)
+    }
+  } catch (error) {
+    console.error('保存任务状态失败:', error)
+  }
+}
+
 interface DragState {
   activeId: string | null
   sourceColumn: string | null
@@ -41,7 +52,7 @@ export function useCrossColumnDragging({
       dragStateRef.current = {
         activeId,
         sourceColumn,
-        tasksSnapshot: JSON.parse(JSON.stringify(currentTasksByColumn)),
+        tasksSnapshot: structuredClone(currentTasksByColumn),
         lastTargetColumn: null,
       }
     },
@@ -111,7 +122,10 @@ export function useCrossColumnDragging({
         }
 
         const newTargetTasks = [...targetTasks]
-        newTargetTasks.splice(insertIndex, 0, draggedTask)
+        newTargetTasks.splice(insertIndex, 0, {
+          ...draggedTask,
+          status: targetColumnId,
+        })
 
         finalTasksByColumn = {
           ...initialTasks,
@@ -123,14 +137,17 @@ export function useCrossColumnDragging({
       // 更新状态以确保UI显示正确
       setTasksByColumn(finalTasksByColumn)
 
-      // 重建完整的任务列表
+      // 重建完整的任务列表，使用Map提高查找性能
+      const originalTasksMap = new Map(
+        originalTasks.map((task) => [task.id, task])
+      )
       const newTasks: Task[] = []
 
       columns.forEach((column) => {
         const columnTasks = finalTasksByColumn[column.id] || []
         columnTasks.forEach((task) => {
-          // 找到原始任务数据，保持其他属性
-          const originalTask = originalTasks.find((t) => t.id === task.id)
+          // 使用Map查找，提高性能
+          const originalTask = originalTasksMap.get(task.id)
           if (originalTask) {
             newTasks.push({
               ...originalTask,
@@ -147,8 +164,9 @@ export function useCrossColumnDragging({
       })
 
       // 添加可能遗漏的任务（理论上不应该有遗漏）
+      const newTasksMap = new Map(newTasks.map((task) => [task.id, task]))
       originalTasks.forEach((task) => {
-        if (!newTasks.find((t) => t.id === task.id)) {
+        if (!newTasksMap.has(task.id)) {
           newTasks.push(task)
         }
       })
@@ -172,17 +190,6 @@ export function useCrossColumnDragging({
     },
     [tasksByColumn, setTasksByColumn, columns, originalTasks, onTasksChange]
   )
-
-  // 异步保存任务变更
-  const saveTaskChanges = async (tasks: Task[]) => {
-    try {
-      for (const task of tasks) {
-        await saveTask(task)
-      }
-    } catch (error) {
-      console.error('保存任务状态失败:', error)
-    }
-  }
 
   return {
     dragStateRef,
