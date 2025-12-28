@@ -1,11 +1,15 @@
+import type { Group } from '@/types/Group'
+import type { Priority } from '@/types/Priority'
 import type { Task } from '@/types/Task'
-import { DeleteOutlined } from '@ant-design/icons'
+import { groupRepository, priorityRepository } from '@/utils/repositories'
+import { BookOutlined, DeleteOutlined, FlagOutlined } from '@ant-design/icons'
 import { useSortable } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
-import { Button, Card } from 'antd'
+import { Button, Card, Tag } from 'antd'
 import dayjs from 'dayjs'
 import 'dayjs/locale/zh-cn'
 import relativeTime from 'dayjs/plugin/relativeTime'
+import { useEffect, useState } from 'react'
 
 // 配置 dayjs
 dayjs.extend(relativeTime)
@@ -32,6 +36,10 @@ export default function KanbanItem({
     transition,
     isDragging: isSortableDragging,
   } = useSortable({ id: task.id })
+  const [taskPriority, setTaskPriority] = useState<Priority | null | undefined>(
+    null
+  )
+  const [groupList, setGroupList] = useState<Group[]>([])
 
   // 如果是拖拽浮层中的组件，不需要使用dnd-kit的样式
   const style = isOverlayDragging
@@ -46,17 +54,33 @@ export default function KanbanItem({
           : ('static' as const),
       }
 
-  const getPriorityColor = (priority: string) => {
-    switch (priority) {
-      case 'high':
-        return 'text-red-500'
-      case 'medium':
-        return 'text-yellow-500'
-      case 'low':
-        return 'text-green-500'
-      default:
-        return 'text-gray-500'
+  const getPriorityByTaskPriority = async (taskPriority: string) => {
+    try {
+      return await priorityRepository.getById(taskPriority)
+    } catch (error) {
+      console.log(error, 'getPriorityByTaskPriority error')
+      return null
     }
+  }
+
+  useEffect(() => {
+    const fetchPriority = async () => {
+      const priority = await getPriorityByTaskPriority(task.priority)
+      setTaskPriority(priority)
+    }
+    fetchPriority()
+  }, [])
+
+  useEffect(() => {
+    const fetchGroup = async () => {
+      const groupList = await groupRepository.getAll()
+      setGroupList(groupList)
+    }
+    fetchGroup()
+  }, [])
+
+  const getGroupById = (groupId: string) => {
+    return groupList.find((group) => group.id === groupId)
   }
 
   // 安全的HTML内容清理，移除危险标签和属性
@@ -124,17 +148,41 @@ export default function KanbanItem({
       <Card
         size="small"
         title={
-          <div className="flex justify-between items-center">
-            <div>{task.name}</div>
-            <Button
-              danger
-              icon={<DeleteOutlined />}
-              type="link"
-              onClick={(e) => {
-                e.stopPropagation() // 防止触发编辑事件
-                onDelete?.(task)
-              }}
-            ></Button>
+          <div className="flex flex-col pb-2">
+            <div className="flex justify-between items-center">
+              <p
+                className="size-full overflow-hidden text-ellipsis"
+                title={task.name}
+              >
+                {task.name}
+              </p>
+              <Button
+                danger
+                icon={<DeleteOutlined />}
+                type="link"
+                onClick={(e) => {
+                  e.stopPropagation() // 防止触发编辑事件
+                  onDelete?.(task)
+                }}
+              ></Button>
+            </div>
+            <div className="flex gap-2">
+              {task.group?.map((groupId) => {
+                const group = getGroupById(groupId)
+                if (group) {
+                  return (
+                    <Tag
+                      variant="outlined"
+                      icon={<BookOutlined />}
+                      key={group.id}
+                      color={group.color}
+                    >
+                      {group.name}
+                    </Tag>
+                  )
+                }
+              })}
+            </div>
           </div>
         }
         className={`transition-all duration-200 ${
@@ -156,16 +204,14 @@ export default function KanbanItem({
             )}
           </div>
         )}
-        <div className="flex justify-between items-center text-xs">
-          <div className="flex items-center gap-2">
-            <span className={`font-medium ${getPriorityColor(task.priority)}`}>
-              {task.priority === 'high'
-                ? '高'
-                : task.priority === 'medium'
-                  ? '中'
-                  : '低'}
-              优先级
-            </span>
+        <div className="flex justify-between items-center text-xs mt-2">
+          <div className="flex items-center gap-2 flex-wrap">
+            {taskPriority && (
+              <p style={{ color: taskPriority.color, fontWeight: 'bold' }}>
+                <FlagOutlined />
+                <span className="ml-1">{taskPriority.name}</span>
+              </p>
+            )}
             {task.isTop && (
               <span className="text-orange-500 font-semibold bg-orange-50 px-2 py-1 rounded">
                 置顶
