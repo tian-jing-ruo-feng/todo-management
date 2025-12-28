@@ -17,25 +17,19 @@ import {
   rectSortingStrategy,
   sortableKeyboardCoordinates,
 } from '@dnd-kit/sortable'
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { deleteTask, saveTask } from '@/utils/db'
 import KanbanColumn from './KanbanColumn'
 import KanbanItem from './KanbanItem'
 import { useCrossColumnDragging, useSameColumnSorting } from './hooks'
 import { Modal } from 'antd'
+import { statusRepository } from '@/utils/repositories/StatusRepository'
 
 interface Column {
   id: string
   title: string
   color?: string
 }
-
-const initialColumns: Column[] = [
-  { id: 'todo', title: '待办', color: '#ff4d4f' },
-  { id: 'in-progress', title: '进行中', color: '#1890ff' },
-  { id: 'review', title: '待审核', color: '#faad14' },
-  { id: 'done', title: '已完成', color: '#52c41a' },
-]
 
 interface KanbanBoardProps {
   tasks: Task[]
@@ -46,27 +40,44 @@ export default function KanbanBoard({
   tasks,
   onTasksChange,
 }: KanbanBoardProps) {
-  const columns = useMemo(() => initialColumns, [])
+  // 动态状态和列管理
+  const [statusList, setStatusList] = useState<
+    Array<{ id: string; name: string; color: string }>
+  >([])
+  const [columns, setColumns] = useState<Column[]>([])
 
-  const getColumnByStatus = useCallback((status: string): string => {
-    const statusMap: Record<string, string> = {
-      status_1: 'todo', // 待开始 -> 待办
-      status_2: 'in-progress', // 进行中 -> 进行中
-      status_3: 'done', // 已完成 -> 已完成
-      status_4: 'review', // 已延期 -> 待审核
-      status_5: 'todo', // 已取消 -> 待办
-      // 兼容旧的status值
-      todo: 'todo',
-      pending: 'todo',
-      'in-progress': 'in-progress',
-      progress: 'in-progress',
-      review: 'review',
-      testing: 'review',
-      done: 'done',
-      completed: 'done',
+  // 加载状态数据并生成列
+  useEffect(() => {
+    const loadStatusData = async () => {
+      try {
+        const statuses = await statusRepository.getAll()
+        setStatusList(statuses)
+
+        // 根据状态数据动态生成列
+        const dynamicColumns: Column[] = statuses.map((status) => ({
+          id: status.id,
+          title: status.name,
+          color: status.color,
+        }))
+
+        setColumns(dynamicColumns)
+      } catch (error) {
+        console.error('加载状态数据失败:', error)
+      }
     }
-    return statusMap[status] || 'todo'
+
+    loadStatusData()
   }, [])
+
+  // 动态状态映射
+  const getColumnByStatus = useCallback(
+    (status: string): string => {
+      return (
+        statusList.find((s) => s.id === status)?.id || statusList[0]?.id || ''
+      )
+    },
+    [statusList]
+  )
 
   const [tasksByColumn, setTasksByColumn] = useState<Record<string, Task[]>>(
     () => {
@@ -114,7 +125,7 @@ export default function KanbanBoard({
   const [editingTask, setEditingTask] = useState<Task | null>(null)
   const [modalVisible, setModalVisible] = useState(false)
   const [createModalVisible, setCreateModalVisible] = useState(false)
-  const [defaultColumnId, setDefaultColumnId] = useState<string>('status_1')
+  const [defaultColumnId, setDefaultColumnId] = useState<string>('')
 
   // 简化的查找函数，不依赖状态，避免循环依赖
   const findTaskByIdSimple = useCallback(
@@ -210,27 +221,12 @@ export default function KanbanBoard({
     [handleTaskUpdate]
   )
 
-  // 列ID到Status ID的映射
-  const getColumnToStatusMap = useCallback(() => {
-    return {
-      todo: 'status_1', // 待开始
-      'in-progress': 'status_2', // 进行中
-      review: 'status_4', // 待审核
-      done: 'status_3', // 已完成
-    }
-  }, [])
-
   // 打开新增任务弹窗
-  const handleAddTask = useCallback(
-    (columnId: string) => {
-      const statusMap = getColumnToStatusMap()
-      const defaultStatus =
-        statusMap[columnId as keyof typeof statusMap] || 'status_1'
-      setDefaultColumnId(defaultStatus)
-      setCreateModalVisible(true)
-    },
-    [getColumnToStatusMap]
-  )
+  const handleAddTask = useCallback((columnId: string) => {
+    // 直接使用列ID作为状态ID
+    setDefaultColumnId(columnId)
+    setCreateModalVisible(true)
+  }, [])
 
   // 删除任务，弹出确认删除提示
   const handleDeleteTask = useCallback(
@@ -269,7 +265,7 @@ export default function KanbanBoard({
 
   const handleCreateModalClose = useCallback(() => {
     setCreateModalVisible(false)
-    setDefaultColumnId('status_1')
+    setDefaultColumnId('')
   }, [])
 
   // 创建新任务
