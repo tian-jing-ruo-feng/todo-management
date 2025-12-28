@@ -19,7 +19,7 @@ interface TaskCreateModalProps {
 
 export default function TaskCreateModal({
   visible,
-  defaultStatus = 'status_1',
+  defaultStatus = '',
   onClose,
   onSave,
 }: TaskCreateModalProps) {
@@ -58,7 +58,7 @@ export default function TaskCreateModal({
         id: `task_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`,
         name: values.name,
         status: values.status || defaultStatus,
-        priority: values.priority || 'priority_2',
+        priority: values.priority || '',
         group: values.group || [],
         content,
         createTime: new Date().toISOString(),
@@ -102,7 +102,7 @@ export default function TaskCreateModal({
         layout="vertical"
         initialValues={{
           status: defaultStatus,
-          priority: 'priority_2',
+          priority: '',
           isTop: false,
         }}
       >
