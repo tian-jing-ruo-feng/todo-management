@@ -1,5 +1,6 @@
 import {
   ClockCircleOutlined,
+  SettingOutlined,
   TableOutlined,
   ToTopOutlined,
   UserOutlined,
@@ -20,34 +21,18 @@ export interface SelectTabProps {
 
 export default function SelectTab(props: SelectTabProps) {
   const [buttons, setButtons] = useState<ButtonItem[]>([
-    // 优先级视图
-    // {
-    //   title: '优先级视图',
-    //   key: 'priority',
-    //   icon: <ToTopOutlined />,
-    //   isActive: false,
-    // },
-
     {
       title: '看板视图',
       key: 'kanban',
       icon: <TableOutlined />,
       isActive: true,
     },
-
-    // {
-    //   title: '时间视图',
-    //   key: 'time',
-    //   icon: <ClockCircleOutlined />,
-    //   isActive: false,
-    // },
-
-    // {
-    //   title: '负责人视图',
-    //   key: 'assignee',
-    //   icon: <UserOutlined />,
-    //   isActive: false,
-    // },
+    {
+      title: '配置管理',
+      key: 'config',
+      icon: <SettingOutlined />,
+      isActive: false,
+    },
   ])
 
   const handleClick = (ind: number) => () => {

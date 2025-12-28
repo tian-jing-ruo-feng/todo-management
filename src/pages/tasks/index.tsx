@@ -9,6 +9,7 @@ import mockTasks from '@/mock/task.json'
 import dayjs from 'dayjs'
 import { useState } from 'react'
 import KanbanPage from '../kanban'
+import ConfigPage from '../config'
 import SelectTab, { type ButtonItem } from './SelectTab'
 import TaskStatistc from './TaskStatistc'
 
@@ -192,6 +193,8 @@ export default function Tasks() {
           <KanbanPage></KanbanPage>
         </div>
       )}
+
+      {selectTab?.key === 'config' && <ConfigPage />}
 
       {selectTab?.key === 'priority' && (
         <Table<Task>

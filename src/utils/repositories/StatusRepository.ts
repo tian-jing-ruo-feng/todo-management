@@ -15,6 +15,22 @@ export class StatusRepository {
   }
 
   /**
+   * 分页获取数据
+   * @param page 页码
+   * @param pageSize 每页大小
+   * @returns Promise<Status[]> 分页状态列表
+   */
+  async getPaginated(
+    page: number = 1,
+    pageSize: number = 10
+  ): Promise<Status[]> {
+    return await db.statuses
+      .offset((page - 1) * pageSize)
+      .limit(pageSize)
+      .toArray()
+  }
+
+  /**
    * 根据ID获取状态
    * @param id 状态ID
    * @returns Promise<Status | undefined> 状态对象

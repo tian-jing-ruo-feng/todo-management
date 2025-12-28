@@ -15,6 +15,22 @@ export class PriorityRepository {
   }
 
   /**
+   * 分页获取数据
+   * @param page 页码
+   * @param pageSize 每页大小
+   * @returns Promise<Priority[]> 分页优先级列表
+   */
+  async getPaginated(
+    page: number = 1,
+    pageSize: number = 10
+  ): Promise<Priority[]> {
+    return await db.priorities
+      .offset((page - 1) * pageSize)
+      .limit(pageSize)
+      .toArray()
+  }
+
+  /**
    * 根据ID获取优先级
    * @param id 优先级ID
    * @returns Promise<Priority | undefined> 优先级对象

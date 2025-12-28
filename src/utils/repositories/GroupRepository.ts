@@ -15,6 +15,22 @@ export class GroupRepository {
   }
 
   /**
+   * 分页获取数据
+   * @param page 页码
+   * @param pageSize 每页大小
+   * @returns Promise<Group[]> 分页分组列表
+   */
+  async getPaginated(
+    page: number = 1,
+    pageSize: number = 10
+  ): Promise<Group[]> {
+    return await db.groups
+      .offset((page - 1) * pageSize)
+      .limit(pageSize)
+      .toArray()
+  }
+
+  /**
    * 根据ID获取分组
    * @param id 分组ID
    * @returns Promise<Group | undefined> 分组对象
