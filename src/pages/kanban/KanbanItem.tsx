@@ -166,7 +166,7 @@ export default function KanbanItem({
                 }}
               ></Button>
             </div>
-            <div className="flex gap-2">
+            <div className="flex gap-2 flex-wrap">
               {task.group?.map((groupId) => {
                 const group = getGroupById(groupId)
                 if (group) {
