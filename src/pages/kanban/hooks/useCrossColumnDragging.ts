@@ -1,18 +1,12 @@
 import type { Task } from '@/types/Task'
 import type { DragEndEvent } from '@dnd-kit/core'
 import { useCallback, useRef } from 'react'
-import { saveTask } from '@/utils/db'
-
-// 异步保存任务变更
-const saveTaskChanges = async (tasks: Task[]) => {
-  try {
-    // 使用 Promise.all 并行保存，提高性能
-    const savePromises = tasks.map((task) => saveTask(task))
-    await Promise.all(savePromises)
-  } catch (error) {
-    console.error('保存任务状态失败:', error)
-  }
-}
+import {
+  findTargetColumn,
+  rebuildTasksList,
+  saveTaskChanges,
+  updateTasksSortOrder,
+} from '../utils/taskOperations'
 
 interface DragState {
   activeId: string | null
@@ -80,22 +74,8 @@ export function useCrossColumnDragging({
       if (!sourceColumn) return
 
       // 确定最终的目标列
-      let targetColumnId = columns.find((col) => col.id === overId)?.id
-
-      // 如果不是列ID，查找overId所在的任务所在列
-      if (!targetColumnId) {
-        for (const [columnId, columnTasks] of Object.entries(tasksByColumn)) {
-          if (columnTasks.some((task) => task.id === overId)) {
-            targetColumnId = columnId
-            break
-          }
-        }
-      }
-
-      // 如果找不到目标列，则使用源列
-      if (!targetColumnId) {
-        targetColumnId = sourceColumn
-      }
+      const foundTargetColumn = findTargetColumn(overId, columns, tasksByColumn)
+      const targetColumnId = foundTargetColumn || sourceColumn
 
       let finalTasksByColumn: Record<string, Task[]>
 
@@ -104,48 +84,19 @@ export function useCrossColumnDragging({
         // 同列内排序：使用当前memoized状态（已通过handleDragOver实时更新）
         finalTasksByColumn = { ...tasksByColumn }
 
-        // 同列排序也需要保存数据和同步状态
-        const columnTasks = finalTasksByColumn[sourceColumn]
-        if (columnTasks) {
-          // 重建完整的任务列表
-          const originalTasksMap = new Map(
-            originalTasks.map((task) => [task.id, task])
-          )
-          const newTasks: Task[] = []
+        // 同列排序：重建任务列表并保存
+        const newTasks = rebuildTasksList(
+          finalTasksByColumn,
+          originalTasks,
+          activeId
+        )
 
-          // 遍历所有列，构建完整的任务列表
-          Object.entries(finalTasksByColumn).forEach(([colId, colTasks]) => {
-            colTasks.forEach((task) => {
-              const originalTask = originalTasksMap.get(task.id)
-              if (originalTask) {
-                newTasks.push({
-                  ...originalTask,
-                  status: colId as Task['status'],
-                  sort: task.sort,
-                  updateTime:
-                    task.id === activeId
-                      ? new Date().toISOString()
-                      : originalTask.updateTime,
-                })
-              }
-            })
-          })
-
-          // 添加可能遗漏的任务
-          const newTasksMap = new Map(newTasks.map((task) => [task.id, task]))
-          originalTasks.forEach((task) => {
-            if (!newTasksMap.has(task.id)) {
-              newTasks.push(task)
-            }
-          })
-
-          if (onTasksChange) {
-            onTasksChange(newTasks)
-          }
-
-          // 异步保存到数据库
-          saveTaskChanges(newTasks)
+        if (onTasksChange) {
+          onTasksChange(newTasks)
         }
+
+        // 异步保存到数据库
+        saveTaskChanges(newTasks)
       } else {
         // 跨列移动：使用初始状态快照进行计算
         const initialTasks = dragState.tasksSnapshot || tasksByColumn
@@ -171,15 +122,8 @@ export function useCrossColumnDragging({
         })
 
         // 更新源列和目标列的sort属性（倒序）
-        const updatedSourceTasks = newSourceTasks.map((task, index) => ({
-          ...task,
-          sort: newSourceTasks.length - index, // 倒序：第一个元素sort值最大
-        }))
-
-        const updatedTargetTasks = newTargetTasks.map((task, index) => ({
-          ...task,
-          sort: newTargetTasks.length - index, // 倒序：第一个元素sort值最大
-        }))
+        const updatedSourceTasks = updateTasksSortOrder(newSourceTasks)
+        const updatedTargetTasks = updateTasksSortOrder(newTargetTasks)
 
         finalTasksByColumn = {
           ...initialTasks,
@@ -190,40 +134,12 @@ export function useCrossColumnDragging({
         // 更新状态以确保UI显示正确
         setTasksByColumn(finalTasksByColumn)
 
-        // 重建完整的任务列表，使用Map提高查找性能
-        const originalTasksMap = new Map(
-          originalTasks.map((task) => [task.id, task])
+        // 重建完整的任务列表
+        const newTasks = rebuildTasksList(
+          finalTasksByColumn,
+          originalTasks,
+          activeId
         )
-        const newTasks: Task[] = []
-
-        columns.forEach((column) => {
-          const columnTasks = finalTasksByColumn[column.id] || []
-          columnTasks.forEach((task) => {
-            // 使用Map查找，提高性能
-            const originalTask = originalTasksMap.get(task.id)
-            if (originalTask) {
-              newTasks.push({
-                ...originalTask,
-                // 使用当前列作为状态，反映拖拽后的实际位置
-                status: column.id as Task['status'],
-                sort: task.sort,
-                // 如果是当前拖拽的任务，更新时间
-                updateTime:
-                  task.id === activeId
-                    ? new Date().toISOString()
-                    : originalTask.updateTime,
-              })
-            }
-          })
-        })
-
-        // 添加可能遗漏的任务（理论上不应该有遗漏）
-        const newTasksMap = new Map(newTasks.map((task) => [task.id, task]))
-        originalTasks.forEach((task) => {
-          if (!newTasksMap.has(task.id)) {
-            newTasks.push(task)
-          }
-        })
 
         if (onTasksChange) {
           onTasksChange(newTasks)
