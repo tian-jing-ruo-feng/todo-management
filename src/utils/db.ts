@@ -1,5 +1,8 @@
 import Dexie from 'dexie'
 import type { Table } from 'dexie'
+import type { Status } from '@/types/Status'
+import type { Priority } from '@/types/Priority'
+import type { Group } from '@/types/Group'
 
 /**
  * 任务接口定义
@@ -61,6 +64,9 @@ export interface Task {
  */
 class TaskDatabase extends Dexie {
   tasks!: Table<Task>
+  statuses!: Table<Status>
+  priorities!: Table<Priority>
+  groups!: Table<Group>
 
   constructor() {
     super('TodoDB')
@@ -69,6 +75,9 @@ class TaskDatabase extends Dexie {
     // 后续字段表示创建索引
     this.version(1).stores({
       tasks: 'id, status, priority, createTime, updateTime, isTop, isRemoved',
+      statuses: 'id',
+      priorities: 'id',
+      groups: 'id',
     })
   }
 }
