@@ -67,6 +67,7 @@ export default function TaskCreateModal({
         isTop: values.isTop || false,
         expectStartTime: values.expectStartTime || null,
         expectEndTime: values.expectEndTime || null,
+        sort: 0, // 默认排序值，后续会在KanbanBoard中重新计算
       }
 
       onSave(newTask)

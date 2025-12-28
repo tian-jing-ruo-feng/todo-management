@@ -127,10 +127,21 @@ export function useCrossColumnDragging({
           status: targetColumnId,
         })
 
+        // 更新源列和目标列的sort属性（倒序）
+        const updatedSourceTasks = newSourceTasks.map((task, index) => ({
+          ...task,
+          sort: newSourceTasks.length - 1 - index, // 倒序：第一个元素sort值最大
+        }))
+
+        const updatedTargetTasks = newTargetTasks.map((task, index) => ({
+          ...task,
+          sort: newTargetTasks.length - 1 - index, // 倒序：第一个元素sort值最大
+        }))
+
         finalTasksByColumn = {
           ...initialTasks,
-          [sourceColumn]: newSourceTasks,
-          [targetColumnId]: newTargetTasks,
+          [sourceColumn]: updatedSourceTasks,
+          [targetColumnId]: updatedTargetTasks,
         }
       }
 
@@ -176,6 +187,7 @@ export function useCrossColumnDragging({
       }
 
       // 异步保存所有任务到数据库（不阻塞UI）
+      console.log(newTasks, '<<<<< newTasks')
       saveTaskChanges(newTasks)
 
       // 重置拖拽状态

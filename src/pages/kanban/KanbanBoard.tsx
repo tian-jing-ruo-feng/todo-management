@@ -18,7 +18,7 @@ import {
   sortableKeyboardCoordinates,
 } from '@dnd-kit/sortable'
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { deleteTask, saveTask } from '@/utils/db'
+import { deleteTask, getAllTasksCount, saveTask } from '@/utils/db'
 import KanbanColumn from './KanbanColumn'
 import KanbanItem from './KanbanItem'
 import { useCrossColumnDragging, useSameColumnSorting } from './hooks'
@@ -94,6 +94,15 @@ export default function KanbanBoard({
         }
       })
 
+      // 按sort倒序排列（sort值大的在上面）
+      Object.keys(grouped).forEach((columnId) => {
+        grouped[columnId].sort((a, b) => {
+          const sortA = a.sort ?? 0
+          const sortB = b.sort ?? 0
+          return sortB - sortA // 倒序：b在前
+        })
+      })
+
       return grouped
     }
   )
@@ -105,12 +114,21 @@ export default function KanbanBoard({
       grouped[col.id] = []
     })
 
-    // 根据任务状态分配到不同列
+    // 根据任务状态分配到不同列，并按sort倒序排列
     tasks.forEach((task) => {
       const columnId = getColumnByStatus(task.status)
       if (grouped[columnId]) {
         grouped[columnId].push(task)
       }
+    })
+
+    // 按sort倒序排列（sort值大的在上面）
+    Object.keys(grouped).forEach((columnId) => {
+      grouped[columnId].sort((a, b) => {
+        const sortA = a.sort ?? 0
+        const sortB = b.sort ?? 0
+        return sortB - sortA // 倒序：b在前
+      })
     })
 
     // 使用 setTimeout 避免同步 setState
@@ -273,7 +291,11 @@ export default function KanbanBoard({
     async (newTask: Task) => {
       // 保存到数据库
       try {
-        await saveTask(newTask)
+        // 获取任务总数
+        const taskCount = await getAllTasksCount()
+        // 为新任务设置ID
+        const newTaskWithSort = { ...newTask, sort: taskCount + 1 }
+        await saveTask(newTaskWithSort)
       } catch (error) {
         console.error('创建任务失败:', error)
       }
@@ -285,10 +307,15 @@ export default function KanbanBoard({
 
       // 更新本地状态
       const columnId = getColumnByStatus(newTask.status)
-      setTasksByColumn((prev) => ({
-        ...prev,
-        [columnId]: [...(prev[columnId] || []), newTask],
-      }))
+      setTasksByColumn((prev) => {
+        const columnTasks = (prev[columnId] || []).map((task, index) => {
+          return { ...task, sort: index + 1 }
+        })
+        return {
+          ...prev,
+          [columnId]: [...columnTasks],
+        }
+      })
     },
     [tasks, onTasksChange, getColumnByStatus]
   )

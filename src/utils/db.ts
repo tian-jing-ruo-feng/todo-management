@@ -57,6 +57,10 @@ export interface Task {
    * 是否置顶
    */
   isTop?: boolean
+  /**
+   * 排序
+   */
+  sort?: number
 }
 
 /**
@@ -74,7 +78,8 @@ class TaskDatabase extends Dexie {
     // ++id 表示自增主键，但这里我们使用字符串ID
     // 后续字段表示创建索引
     this.version(1).stores({
-      tasks: 'id, status, priority, createTime, updateTime, isTop, isRemoved',
+      tasks:
+        'id, status, priority, createTime, updateTime, isTop, isRemoved, sort',
       statuses: 'id',
       priorities: 'id',
       groups: 'id',
@@ -173,6 +178,13 @@ export const getTaskById = async (
  */
 export const bulkUpdateTasks = async (tasks: Task[]): Promise<void> => {
   await db.tasks.bulkPut(tasks)
+}
+
+/**
+ * 获取所有任务总数（包括删除）
+ */
+export const getAllTasksCount = async (): Promise<number> => {
+  return await db.tasks.count()
 }
 
 /**

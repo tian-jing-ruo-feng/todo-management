@@ -51,4 +51,8 @@ export interface Task {
    * 是否置顶
    */
   isTop?: boolean // 是否置顶
+  /**
+   * 排序属性
+   */
+  sort?: number // 排序属性
 }

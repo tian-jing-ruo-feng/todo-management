@@ -66,10 +66,16 @@ export function useSameColumnSorting({
 
         newTargetTasks.splice(insertIndex, 0, activeTask)
 
+        // 更新sort属性：根据任务在列中的位置重新分配sort值（倒序）
+        const updatedTasks = newTargetTasks.map((task, index) => ({
+          ...task,
+          sort: index + 1, // 倒序：第一个元素sort值最大
+        }))
+
         // 使用批量更新减少重渲染
         const newTasksByColumn = {
           ...currentTasks,
-          [columnId]: newTargetTasks,
+          [columnId]: updatedTasks,
         }
 
         // 实时更新状态，确保交互和数据的实时同步
