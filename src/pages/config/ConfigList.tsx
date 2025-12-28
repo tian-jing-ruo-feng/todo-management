@@ -1,10 +1,11 @@
-import type { TableProps } from 'antd'
+import { Tag, type TableProps } from 'antd'
 import { Button, Space, Table } from 'antd'
 import type { ConfigItem } from '@/types/config'
 
 export interface ConfigListProps {
   data: ConfigItem[]
   loading?: boolean
+  tagIcon?: React.ReactNode
   onEdit: (item: ConfigItem) => void
   onDelete: (item: ConfigItem) => void
   currentPage: number
@@ -15,6 +16,7 @@ export interface ConfigListProps {
 export default function ConfigList({
   data,
   loading,
+  tagIcon,
   onEdit,
   onDelete,
   currentPage,
@@ -34,6 +36,11 @@ export default function ConfigList({
       dataIndex: 'name',
       key: 'name',
       ellipsis: true,
+      render: (_, record) => (
+        <Tag color={record.color} icon={tagIcon}>
+          {record.name || '-'}
+        </Tag>
+      ),
     },
     {
       title: '颜色',

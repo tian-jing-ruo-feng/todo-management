@@ -1,6 +1,12 @@
-import { useState, useEffect } from 'react'
+import React, { useState, useEffect } from 'react'
 import { Button, Card, Empty, Spin, message } from 'antd'
-import { PlusOutlined } from '@ant-design/icons'
+import {
+  FlagOutlined,
+  GroupOutlined,
+  PlusOutlined,
+  ScheduleFilled,
+  ToolOutlined,
+} from '@ant-design/icons'
 import ConfigTabs from './ConfigTabs'
 import ConfigList from './ConfigList'
 import ConfigForm from './ConfigForm'
@@ -20,6 +26,7 @@ import type { Priority } from '@/types/Priority'
 import type { Group } from '@/types/Group'
 
 export default function ConfigPage() {
+  const [tagIcon, setTagIcon] = useState<React.ReactNode>(<ToolOutlined />)
   const [activeKey, setActiveKey] = useState<string>(ConfigType.Status)
   const [data, setData] = useState<ConfigItem[]>([])
   const [loading, setLoading] = useState(false)
@@ -74,6 +81,20 @@ export default function ConfigPage() {
   useEffect(() => {
     loadData(activeKey, currentPage, pageSize)
   }, [activeKey, currentPage, pageSize])
+
+  useEffect(() => {
+    switch (activeKey) {
+      case ConfigType.Status:
+        setTagIcon(<ScheduleFilled />)
+        break
+      case ConfigType.Priority:
+        setTagIcon(<FlagOutlined />)
+        break
+      case ConfigType.Group:
+        setTagIcon(<GroupOutlined />)
+        break
+    }
+  }, [activeKey])
 
   // 打开新增表单
   const handleAdd = () => {
@@ -189,6 +210,7 @@ export default function ConfigPage() {
         ) : (
           <ConfigList
             data={data}
+            tagIcon={tagIcon}
             currentPage={currentPage}
             pageSize={pageSize}
             onPageChange={handlePageChange}
