@@ -96,7 +96,7 @@ export default function ConfigPage() {
       const newData: ConfigItem = {
         id: editingItem?.id || `${activeKey}_${Date.now()}`,
         name: values.name,
-        color: typeof values.color === 'string' ? values.color : 'white',
+        color: values.color,
       }
       switch (activeKey) {
         case ConfigType.Status:

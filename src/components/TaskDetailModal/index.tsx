@@ -4,7 +4,9 @@ import { Form, Input, Modal, Select, Switch } from 'antd'
 import { useState, useEffect } from 'react'
 import RichTextEditor from '../RichTextEditor'
 import DateTimePicker from '../DateTimePicker'
-import { getStatusOptions, getPriorityOptions } from '@/utils/taskHelpers'
+import { statusRepository } from '@/utils/repositories/StatusRepository'
+import { priorityRepository } from '@/utils/repositories/PriorityRepository'
+import { groupRepository } from '@/utils/repositories/GroupRepository'
 
 interface TaskDetailModalProps {
   visible: boolean
@@ -28,10 +30,27 @@ export default function TaskDetailModal({
   const [priorityOptions, setPriorityOptions] = useState<
     Array<{ id: string; name: string; color: string }>
   >([])
+  const [groupOptions, setGroupOptions] = useState<
+    Array<{ id: string; name: string; color: string }>
+  >([])
 
   useEffect(() => {
-    setStatusOptions(getStatusOptions())
-    setPriorityOptions(getPriorityOptions())
+    const loadOptions = async () => {
+      try {
+        const [statuses, priorities, groups] = await Promise.all([
+          statusRepository.getAll(),
+          priorityRepository.getAll(),
+          groupRepository.getAll(),
+        ])
+        setStatusOptions(statuses)
+        setPriorityOptions(priorities)
+        setGroupOptions(groups)
+      } catch (error) {
+        console.error('加载配置数据失败:', error)
+      }
+    }
+
+    loadOptions()
   }, [])
 
   // 当任务改变时，更新表单和内容
@@ -42,6 +61,7 @@ export default function TaskDetailModal({
         name: task.name,
         status: task.status,
         priority: task.priority,
+        group: task.group || [],
         isTop: task.isTop,
         expectStartTime: task.expectStartTime,
         expectEndTime: task.expectEndTime,
@@ -136,6 +156,16 @@ export default function TaskDetailModal({
 
         <Form.Item name="expectEndTime" label="期望结束时间">
           <DateTimePicker placeholder="选择期望结束时间" />
+        </Form.Item>
+
+        <Form.Item name="group" label="分组">
+          <Select mode="multiple" placeholder="选择任务分组" allowClear>
+            {groupOptions.map((group) => (
+              <Select.Option key={group.id} value={group.id}>
+                <span style={{ color: group.color }}>●</span> {group.name}
+              </Select.Option>
+            ))}
+          </Select>
         </Form.Item>
 
         <Form.Item name="isTop" label="是否置顶" valuePropName="checked">

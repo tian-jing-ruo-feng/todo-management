@@ -3,7 +3,12 @@ import { Form, Input, Modal, Select, Switch } from 'antd'
 import { useState, useEffect } from 'react'
 import RichTextEditor from '../RichTextEditor'
 import DateTimePicker from '../DateTimePicker'
-import { getStatusOptions, getPriorityOptions } from '@/utils/taskHelpers'
+import { statusRepository } from '@/utils/repositories/StatusRepository'
+import { priorityRepository } from '@/utils/repositories/PriorityRepository'
+import { groupRepository } from '@/utils/repositories/GroupRepository'
+import type { Status } from '@/types/Status'
+import type { Priority } from '@/types/Priority'
+import type { Group } from '@/types/Group'
 
 interface TaskCreateModalProps {
   visible: boolean
@@ -21,12 +26,27 @@ export default function TaskCreateModal({
   const [form] = Form.useForm()
   const [content, setContent] = useState('')
   const [loading, setLoading] = useState(false)
-  const [statusOptions, setStatusOptions] = useState<any[]>([])
-  const [priorityOptions, setPriorityOptions] = useState<any[]>([])
+  const [statusOptions, setStatusOptions] = useState<Status[]>([])
+  const [priorityOptions, setPriorityOptions] = useState<Priority[]>([])
+  const [groupOptions, setGroupOptions] = useState<Group[]>([])
 
   useEffect(() => {
-    setStatusOptions(getStatusOptions())
-    setPriorityOptions(getPriorityOptions())
+    const loadOptions = async () => {
+      try {
+        const [statuses, priorities, groups] = await Promise.all([
+          statusRepository.getAll(),
+          priorityRepository.getAll(),
+          groupRepository.getAll(),
+        ])
+        setStatusOptions(statuses)
+        setPriorityOptions(priorities)
+        setGroupOptions(groups)
+      } catch (error) {
+        console.error('加载配置数据失败:', error)
+      }
+    }
+
+    loadOptions()
   }, [])
 
   const handleOk = async () => {
@@ -39,6 +59,7 @@ export default function TaskCreateModal({
         name: values.name,
         status: values.status || defaultStatus,
         priority: values.priority || 'priority_2',
+        group: values.group || [],
         content,
         createTime: new Date().toISOString(),
         updateTime: new Date().toISOString(),
@@ -119,6 +140,16 @@ export default function TaskCreateModal({
 
         <Form.Item name="expectEndTime" label="期望结束时间">
           <DateTimePicker placeholder="选择期望结束时间" />
+        </Form.Item>
+
+        <Form.Item name="group" label="分组">
+          <Select mode="multiple" placeholder="选择任务分组" allowClear>
+            {groupOptions.map((group) => (
+              <Select.Option key={group.id} value={group.id}>
+                <span style={{ color: group.color }}>●</span> {group.name}
+              </Select.Option>
+            ))}
+          </Select>
         </Form.Item>
 
         <Form.Item name="isTop" label="是否置顶" valuePropName="checked">

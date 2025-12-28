@@ -75,8 +75,9 @@ export default function ConfigForm({
           label="颜色"
           name="color"
           rules={[{ required: true, message: '请选择颜色' }]}
+          normalize={(value) => value.toHexString()}
         >
-          <ColorPicker showText format="hex" />
+          <ColorPicker showText format="hex" defaultFormat="hex" />
         </Form.Item>
       </Form>
     </Modal>
