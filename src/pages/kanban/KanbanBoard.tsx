@@ -163,6 +163,8 @@ export default function KanbanBoard({
     setTasksByColumn,
     findTaskById: findTaskByIdSimple,
     tasksSnapshot: tasksByColumn, // 直接使用当前状态
+    originalTasks: tasks,
+    onTasksChange,
   })
 
   const {
