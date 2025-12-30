@@ -1,5 +1,8 @@
 import TaskCreateModal from '@/components/TaskCreateModal'
 import TaskDetailModal from '@/components/TaskDetailModal'
+import TaskFilterForm, {
+  type TaskFilterValues,
+} from '@/components/TaskFilterForm'
 import type { Task } from '@/types/Task'
 import type { DragEndEvent, DragOverEvent, DragStartEvent } from '@dnd-kit/core'
 import {
@@ -79,6 +82,9 @@ export default function KanbanBoard({
     [statusList]
   )
 
+  // 过滤状态
+  const [filteredTasks, setFilteredTasks] = useState<Task[]>(tasks)
+
   const [tasksByColumn, setTasksByColumn] = useState<Record<string, Task[]>>(
     () => {
       const grouped: Record<string, Task[]> = {}
@@ -107,7 +113,7 @@ export default function KanbanBoard({
     }
   )
 
-  // 当 tasks prop 发生变化时，重新计算 tasksByColumn
+  // 当 filteredTasks 发生变化时，重新计算 tasksByColumn
   useEffect(() => {
     const grouped: Record<string, Task[]> = {}
     columns.forEach((col) => {
@@ -115,7 +121,7 @@ export default function KanbanBoard({
     })
 
     // 根据任务状态分配到不同列，并按sort倒序排列
-    tasks.forEach((task) => {
+    filteredTasks.forEach((task) => {
       const columnId = getColumnByStatus(task.status)
       if (grouped[columnId]) {
         grouped[columnId].push(task)
@@ -136,7 +142,7 @@ export default function KanbanBoard({
       setTasksByColumn(grouped)
     }, 0)
     return () => clearTimeout(timer)
-  }, [tasks, columns, getColumnByStatus])
+  }, [filteredTasks, columns, getColumnByStatus])
 
   const [activeTask, setActiveTask] = useState<Task | null>(null)
   const draggedTaskRef = useRef<Task | null>(null)
@@ -156,6 +162,45 @@ export default function KanbanBoard({
     },
     []
   )
+
+  // 处理过滤变化
+  const handleFilterChange = useCallback(
+    (filters: TaskFilterValues) => {
+      const { status, priority, group, keyword } = filters
+
+      let result = [...tasks]
+
+      if (status) {
+        result = result.filter((task) => task.status === status)
+      }
+      if (priority) {
+        result = result.filter((task) => task.priority === priority)
+      }
+      if (group) {
+        result = result.filter(
+          (task) => task.group && task.group.includes(group)
+        )
+      }
+      if (keyword) {
+        result = result.filter((task) =>
+          task.name.toLowerCase().includes(keyword.toLowerCase())
+        )
+      }
+
+      setFilteredTasks(result)
+    },
+    [tasks]
+  )
+
+  // 重置过滤
+  const handleResetFilter = useCallback(() => {
+    setFilteredTasks(tasks)
+  }, [tasks])
+
+  // 监听 tasks 变化，更新过滤后的任务
+  useEffect(() => {
+    setFilteredTasks(tasks)
+  }, [tasks])
 
   // 使用封装的hooks
   const { handleSameColumnSorting } = useSameColumnSorting({
@@ -430,11 +475,13 @@ export default function KanbanBoard({
 
   return (
     <div className="p-2 bg-gray-50 size-full overflow-hidden">
-      {/* <div className="mb-6">
-        <h1 className="text-2xl font-bold text-gray-800 mb-2">任务看板</h1>
-        <p className="text-gray-600">拖拽任务卡片来改变状态和顺序</p>
-      </div> */}
-
+      {/* 任务过滤表单 */}
+      <div className="mb-3">
+        <TaskFilterForm
+          onFilterChange={handleFilterChange}
+          onReset={handleResetFilter}
+        />
+      </div>
       <DndContext
         sensors={sensors}
         collisionDetection={rectIntersection}
