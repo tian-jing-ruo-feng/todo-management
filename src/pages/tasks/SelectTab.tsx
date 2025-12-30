@@ -1,10 +1,4 @@
-import {
-  ClockCircleOutlined,
-  SettingOutlined,
-  TableOutlined,
-  ToTopOutlined,
-  UserOutlined,
-} from '@ant-design/icons'
+import { SettingOutlined, TableOutlined } from '@ant-design/icons'
 import { Button, Card } from 'antd'
 import { useEffect, useState } from 'react'
 
@@ -50,7 +44,7 @@ export default function SelectTab(props: SelectTabProps) {
     }
   }, [])
   return (
-    <Card>
+    <Card classNames={{ body: 'p-3!' }}>
       <ul className="flex space-x-4">
         {buttons.map((item, ind) => (
           <li key={item.key} onClick={handleClick(ind)}>

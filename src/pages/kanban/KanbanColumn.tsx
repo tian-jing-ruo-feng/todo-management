@@ -31,7 +31,7 @@ export default function KanbanColumn({
   })
 
   return (
-    <div className="flex-1 min-w-[300px] max-w-[350px]  min-h-[500px] relative size-full">
+    <div className="flex-1 min-w-[300px] max-w-[350px]  relative size-full">
       <Card
         className={`size-full transition-all duration-300 flex flex-col  ${
           isOver
@@ -74,7 +74,7 @@ export default function KanbanColumn({
           </div>
           <div
             ref={setNodeRef} // 将拖拽区域设置为除去标题和按钮后的内容区域
-            className={`space-y-2 flex-1 overflow-y-auto h-full min-h-[400px] pt-8 px-3 pb-3 rounded-lg transition-all duration-300 ${
+            className={`space-y-2 flex-1 overflow-y-auto h-full pt-8 px-3 pb-3 rounded-lg transition-all duration-300 ${
               isOver
                 ? 'bg-linear-to-br from-blue-100/40 via-white/30 to-indigo-100/20 border-3 border-dashed border-blue-400'
                 : 'bg-gray-50/30'
