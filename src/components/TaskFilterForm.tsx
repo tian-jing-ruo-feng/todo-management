@@ -6,8 +6,11 @@ import {
   priorityRepository,
   statusRepository,
 } from '@/utils/repositories'
+import { DownloadOutlined } from '@ant-design/icons'
 import { Button, Form, Input, Select } from 'antd'
+import dayjs from 'dayjs'
 import { useEffect, useState } from 'react'
+import { getAllTasks } from '../utils/db'
 
 interface TaskFilterFormProps {
   onFilterChange: (filters: TaskFilterValues) => void
@@ -29,6 +32,7 @@ export default function TaskFilterForm({
   const [statusList, setStatusList] = useState<Status[]>([])
   const [priorityList, setPriorityList] = useState<Priority[]>([])
   const [groupList, setGroupList] = useState<Group[]>([])
+  const [isExporting, setIsExporting] = useState(false)
 
   // 加载状态数据
   useEffect(() => {
@@ -82,6 +86,27 @@ export default function TaskFilterForm({
     onReset()
   }
 
+  const handleExport = async () => {
+    setIsExporting(true)
+    // 导出任务列表
+    const allTasks = await getAllTasks()
+    // 实现导出json文件功能
+    // 导出文件命名：任务列表-YYYY-MM-DD-HH-mm-ss.json
+    const fileName = `任务列表-${dayjs().format('YYYY-MM-DD-HH-mm-ss')}.json`
+    const blob = new Blob([JSON.stringify(allTasks)], {
+      type: 'application/json',
+    })
+    const url = URL.createObjectURL(blob)
+    const link = document.createElement('a')
+    link.href = url
+    link.download = fileName
+    link.click()
+    URL.revokeObjectURL(url)
+    // 移除link
+    link.remove()
+    setIsExporting(false)
+  }
+
   return (
     <div className="bg-white p-4 rounded-lg shadow-sm">
       <Form
@@ -122,6 +147,17 @@ export default function TaskFilterForm({
         </Form.Item>
         <Form.Item>
           <Button onClick={handleReset}>重置</Button>
+        </Form.Item>
+        <Form.Item>
+          {/* 导出按钮 */}
+          <Button
+            loading={isExporting}
+            type="primary"
+            onClick={handleExport}
+            icon={<DownloadOutlined />}
+          >
+            导出
+          </Button>
         </Form.Item>
       </Form>
     </div>

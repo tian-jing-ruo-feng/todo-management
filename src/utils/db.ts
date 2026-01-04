@@ -1,8 +1,8 @@
-import Dexie from 'dexie'
-import type { Table } from 'dexie'
-import type { Status } from '@/types/Status'
-import type { Priority } from '@/types/Priority'
 import type { Group } from '@/types/Group'
+import type { Priority } from '@/types/Priority'
+import type { Status } from '@/types/Status'
+import type { Table } from 'dexie'
+import Dexie from 'dexie'
 
 /**
  * 任务接口定义
