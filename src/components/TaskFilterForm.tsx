@@ -10,6 +10,7 @@ import { DownloadOutlined } from '@ant-design/icons'
 import { Button, Form, Input, Select } from 'antd'
 import dayjs from 'dayjs'
 import { useEffect, useState } from 'react'
+import { downloadFile } from '../utils/common'
 import { getAllTasks } from '../utils/db'
 
 interface TaskFilterFormProps {
@@ -97,13 +98,7 @@ export default function TaskFilterForm({
       type: 'application/json',
     })
     const url = URL.createObjectURL(blob)
-    const link = document.createElement('a')
-    link.href = url
-    link.download = fileName
-    link.click()
-    URL.revokeObjectURL(url)
-    // 移除link
-    link.remove()
+    downloadFile(url, fileName)
     setIsExporting(false)
   }
 
