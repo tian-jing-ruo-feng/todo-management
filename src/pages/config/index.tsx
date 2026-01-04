@@ -324,6 +324,7 @@ export default function ConfigPage() {
               beforeUpload={beforeUpload}
               customRequest={({ file }) => handleImport(file as File)}
               disabled={uploading}
+              maxCount={1}
             >
               <Button icon={<UploadOutlined />} loading={uploading}>
                 导入JSON
