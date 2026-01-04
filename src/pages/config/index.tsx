@@ -1,29 +1,30 @@
-import React, { useState, useEffect } from 'react'
-import { Button, Card, Empty, Spin, message } from 'antd'
+import type { Group } from '@/types/Group'
+import type { Priority } from '@/types/Priority'
+import type { Status } from '@/types/Status'
+import {
+  ConfigType,
+  type ConfigFormData,
+  type ConfigItem,
+} from '@/types/config'
+import {
+  groupRepository,
+  priorityRepository,
+  statusRepository,
+} from '@/utils/repositories'
 import {
   FlagOutlined,
   GroupOutlined,
   PlusOutlined,
   ScheduleFilled,
   ToolOutlined,
+  UploadOutlined,
 } from '@ant-design/icons'
-import ConfigTabs from './ConfigTabs'
-import ConfigList from './ConfigList'
+import { Button, Card, Empty, Spin, Upload, message } from 'antd'
+import React, { useEffect, useState } from 'react'
 import ConfigForm from './ConfigForm'
+import ConfigList from './ConfigList'
+import ConfigTabs from './ConfigTabs'
 import DeleteDialog from './DeleteDialog'
-import {
-  ConfigType,
-  type ConfigItem,
-  type ConfigFormData,
-} from '@/types/config'
-import {
-  statusRepository,
-  priorityRepository,
-  groupRepository,
-} from '@/utils/repositories'
-import type { Status } from '@/types/Status'
-import type { Priority } from '@/types/Priority'
-import type { Group } from '@/types/Group'
 
 export default function ConfigPage() {
   const [tagIcon, setTagIcon] = useState<React.ReactNode>(<ToolOutlined />)
@@ -43,6 +44,9 @@ export default function ConfigPage() {
   // 删除确认
   const [deleteVisible, setDeleteVisible] = useState(false)
   const [deletingItem, setDeletingItem] = useState<ConfigItem | null>(null)
+
+  // 导入相关
+  const [uploading, setUploading] = useState(false)
 
   // 加载数据
   const loadData = async (type: string, page = 1, pageSize = 10) => {
@@ -189,14 +193,146 @@ export default function ConfigPage() {
     }
   }
 
+  // 处理JSON文件导入
+  const handleImport = async (file: File) => {
+    setUploading(true)
+    try {
+      const reader = new FileReader()
+      reader.onload = async (e) => {
+        try {
+          const content = e.target?.result as string
+          const jsonData = JSON.parse(content)
+
+          // 验证JSON格式
+          if (!Array.isArray(jsonData)) {
+            message.error('JSON文件格式错误：必须是数组格式')
+            setUploading(false)
+            return
+          }
+          console.log(jsonData, '<<<<< jsonData')
+
+          // 根据当前激活的标签页导入相应数据
+          let successCount = 0
+          for (const item of jsonData) {
+            try {
+              switch (activeKey) {
+                case ConfigType.Status:
+                  // 导入Status数据
+                  if (
+                    item &&
+                    typeof item.id === 'string' &&
+                    item.id.startsWith('status_')
+                  ) {
+                    const statusItem = item as unknown as Status
+                    // 检查是否已存在
+                    const exists = data.some((d) => d.id === statusItem.id)
+                    if (!exists) {
+                      await statusRepository.add(statusItem)
+                      successCount++
+                    }
+                  }
+                  break
+                case ConfigType.Priority:
+                  // 导入Priority数据
+                  if (
+                    item.id &&
+                    typeof item.id === 'string' &&
+                    item.id.startsWith('priority_')
+                  ) {
+                    const priorityItem = item as unknown as Priority
+                    // 检查是否已存在
+                    const exists = data.some((d) => d.id === priorityItem.id)
+                    if (!exists) {
+                      await priorityRepository.add(priorityItem)
+                      successCount++
+                    }
+                  }
+                  break
+                case ConfigType.Group:
+                  // 导入Group数据
+                  if (
+                    item.id &&
+                    typeof item.id === 'string' &&
+                    item.id.startsWith('group_')
+                  ) {
+                    const groupItem = item as unknown as Group
+                    // 检查是否已存在
+                    const exists = data.some((d) => d.id === groupItem.id)
+                    if (!exists) {
+                      await groupRepository.add(groupItem)
+                      successCount++
+                    }
+                  }
+                  break
+              }
+            } catch (err) {
+              console.error('导入单条数据失败:', err)
+            }
+          }
+
+          if (successCount > 0) {
+            message.success(`成功导入 ${successCount} 条数据`)
+            loadData(activeKey)
+          } else {
+            message.warning('没有导入新数据，可能数据已存在或格式不正确')
+          }
+        } catch (parseError) {
+          console.error('JSON解析失败:', parseError)
+          message.error('JSON文件解析失败，请检查文件格式')
+        } finally {
+          setUploading(false)
+        }
+      }
+      reader.onerror = () => {
+        message.error('文件读取失败')
+        setUploading(false)
+      }
+      reader.readAsText(file)
+    } catch (error) {
+      console.error('导入失败:', error)
+      message.error('导入失败')
+      setUploading(false)
+    }
+    return false // 阻止默认上传行为
+  }
+
+  // 上传前验证
+  const beforeUpload = (file: File) => {
+    const isJson =
+      file.type === 'application/json' || file.name.endsWith('.json')
+    if (!isJson) {
+      message.error('只能上传JSON文件')
+      return Upload.LIST_IGNORE
+    }
+    const isLt10M = file.size / 1024 / 1024 < 10
+    if (!isLt10M) {
+      message.error('文件大小不能超过10MB')
+      return Upload.LIST_IGNORE
+    }
+    return true
+  }
+
   return (
     <div className="flex flex-col gap-4 p-4 size-full">
       <Card>
         <div className="flex justify-between items-center">
           <ConfigTabs activeKey={activeKey} onChange={handleTabChange} />
-          <Button type="primary" icon={<PlusOutlined />} onClick={handleAdd}>
-            新增配置
-          </Button>
+          <div className="flex gap-2">
+            <Upload
+              accept=".json"
+              showUploadList={false}
+              beforeUpload={beforeUpload}
+              customRequest={({ file }) => handleImport(file as File)}
+              disabled={uploading}
+            >
+              <Button icon={<UploadOutlined />} loading={uploading}>
+                导入JSON
+              </Button>
+            </Upload>
+            <Button type="primary" icon={<PlusOutlined />} onClick={handleAdd}>
+              新增配置
+            </Button>
+          </div>
         </div>
       </Card>
 
