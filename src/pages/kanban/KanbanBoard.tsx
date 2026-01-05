@@ -4,6 +4,8 @@ import TaskFilterForm, {
   type TaskFilterValues,
 } from '@/components/TaskFilterForm'
 import type { Task } from '@/types/Task'
+import { deleteTask, getAllTasksCount, saveTask } from '@/utils/db'
+import { statusRepository } from '@/utils/repositories/StatusRepository'
 import type { DragEndEvent, DragOverEvent, DragStartEvent } from '@dnd-kit/core'
 import {
   DndContext,
@@ -20,13 +22,11 @@ import {
   rectSortingStrategy,
   sortableKeyboardCoordinates,
 } from '@dnd-kit/sortable'
+import { Modal } from 'antd'
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { deleteTask, getAllTasksCount, saveTask } from '@/utils/db'
 import KanbanColumn from './KanbanColumn'
 import KanbanItem from './KanbanItem'
 import { useCrossColumnDragging, useSameColumnSorting } from './hooks'
-import { Modal } from 'antd'
-import { statusRepository } from '@/utils/repositories/StatusRepository'
 
 interface Column {
   id: string
@@ -37,11 +37,13 @@ interface Column {
 interface KanbanBoardProps {
   tasks: Task[]
   onTasksChange?: (tasks: Task[]) => void
+  onUploadSuccess: () => void
 }
 
 export default function KanbanBoard({
   tasks,
   onTasksChange,
+  onUploadSuccess,
 }: KanbanBoardProps) {
   // 动态状态和列管理
   const [statusList, setStatusList] = useState<
@@ -480,6 +482,7 @@ export default function KanbanBoard({
         <TaskFilterForm
           onFilterChange={handleFilterChange}
           onReset={handleResetFilter}
+          onUploadSuccess={onUploadSuccess}
         />
       </div>
       <DndContext

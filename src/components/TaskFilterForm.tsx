@@ -6,16 +6,18 @@ import {
   priorityRepository,
   statusRepository,
 } from '@/utils/repositories'
-import { DownloadOutlined } from '@ant-design/icons'
-import { Button, Form, Input, Select } from 'antd'
+import { DownloadOutlined, UploadOutlined } from '@ant-design/icons'
+import { Button, Form, Input, Select, Upload, message } from 'antd'
 import dayjs from 'dayjs'
 import { useEffect, useState } from 'react'
+import type { Task } from '../types/Task'
 import { downloadFile } from '../utils/common'
-import { getAllTasks } from '../utils/db'
+import { getAllTasks, getTaskById, saveTask } from '../utils/db'
 
 interface TaskFilterFormProps {
   onFilterChange: (filters: TaskFilterValues) => void
   onReset: () => void
+  onUploadSuccess: () => void
 }
 
 export interface TaskFilterValues {
@@ -28,12 +30,15 @@ export interface TaskFilterValues {
 export default function TaskFilterForm({
   onFilterChange,
   onReset,
+  onUploadSuccess,
 }: TaskFilterFormProps) {
   const [form] = Form.useForm()
   const [statusList, setStatusList] = useState<Status[]>([])
   const [priorityList, setPriorityList] = useState<Priority[]>([])
   const [groupList, setGroupList] = useState<Group[]>([])
   const [isExporting, setIsExporting] = useState(false)
+  // 导入相关
+  const [uploading, setUploading] = useState(false)
 
   // 加载状态数据
   useEffect(() => {
@@ -102,6 +107,66 @@ export default function TaskFilterForm({
     setIsExporting(false)
   }
 
+  // 上传前验证
+  const beforeUpload = (file: File) => {
+    const isJson =
+      file.type === 'application/json' || file.name.endsWith('.json')
+    if (!isJson) {
+      message.error('只能上传JSON文件')
+      return Upload.LIST_IGNORE
+    }
+    const isLt10M = file.size / 1024 / 1024 < 10
+    if (!isLt10M) {
+      message.error('文件大小不能超过10MB')
+      return Upload.LIST_IGNORE
+    }
+    return true
+  }
+
+  const handleImport = async (file: File) => {
+    const reader = new FileReader()
+    reader.onload = async (e) => {
+      const content = e.target?.result
+      if (typeof content === 'string') {
+        try {
+          setUploading(true)
+          const tasks = JSON.parse(content)
+          // 处理导入的任务数据
+          console.log(tasks, '<<<<< tasks')
+          // 可以在这里添加导入逻辑
+          let successCount = 0
+          for (const task of tasks) {
+            const taskItem = task as unknown as Task
+            if (
+              taskItem &&
+              typeof taskItem.id === 'string' &&
+              taskItem.id.startsWith('task_')
+            ) {
+              // 检查是否已存在
+              const exists = await getTaskById(taskItem.id)
+              if (!exists) {
+                await saveTask(taskItem)
+                successCount++
+              }
+            }
+          }
+
+          if (successCount > 0) {
+            message.success(`成功导入 ${successCount} 条数据`)
+            onUploadSuccess()
+          } else {
+            message.warning('没有导入新数据，可能数据已存在或格式不正确')
+          }
+        } catch (error) {
+          console.error('文件解析失败', error)
+          message.error('JSON文件解析失败，请检查文件格式')
+        } finally {
+          setUploading(false)
+        }
+      }
+    }
+    reader.readAsText(file)
+  }
   return (
     <div className="bg-white p-4 rounded-lg shadow-sm">
       <Form
@@ -144,15 +209,30 @@ export default function TaskFilterForm({
           <Button onClick={handleReset}>重置</Button>
         </Form.Item>
         <Form.Item>
-          {/* 导出按钮 */}
-          <Button
-            loading={isExporting}
-            type="primary"
-            onClick={handleExport}
-            icon={<DownloadOutlined />}
-          >
-            导出
-          </Button>
+          <div className="flex gap-2">
+            {/* 导出按钮 */}
+            <Button
+              loading={isExporting}
+              type="primary"
+              onClick={handleExport}
+              icon={<DownloadOutlined />}
+            >
+              导出
+            </Button>
+            {/* 导入按钮 */}
+            <Upload
+              accept=".json"
+              showUploadList={false}
+              beforeUpload={beforeUpload}
+              customRequest={({ file }) => handleImport(file as File)}
+              disabled={uploading}
+              maxCount={1}
+            >
+              <Button icon={<UploadOutlined />} loading={uploading}>
+                导入JSON
+              </Button>
+            </Upload>
+          </div>
         </Form.Item>
       </Form>
     </div>

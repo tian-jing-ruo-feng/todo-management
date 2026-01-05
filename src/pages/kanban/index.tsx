@@ -1,11 +1,17 @@
+import mockTasks from '@/mock/task.json'
+import type { Task } from '@/utils/db'
+import { getAllTasks, initDatabaseWithSampleData } from '@/utils/db'
 import { useEffect, useState } from 'react'
 import KanbanBoard from './KanbanBoard'
-import { getAllTasks, initDatabaseWithSampleData } from '@/utils/db'
-import type { Task } from '@/utils/db'
-import mockTasks from '@/mock/task.json'
 
 export default function KanbanPage() {
   const [tasks, setTasks] = useState<Task[]>([])
+
+  const refreshTasks = async () => {
+    // 刷新任务列表
+    const allTasks = await getAllTasks()
+    setTasks(allTasks)
+  }
 
   useEffect(() => {
     const loadTasks = async () => {
@@ -27,5 +33,5 @@ export default function KanbanPage() {
     loadTasks()
   }, [])
 
-  return <KanbanBoard tasks={tasks} />
+  return <KanbanBoard tasks={tasks} onUploadSuccess={refreshTasks} />
 }
