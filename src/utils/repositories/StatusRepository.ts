@@ -11,7 +11,8 @@ export class StatusRepository {
    * @returns Promise<Status[]> 状态列表
    */
   async getAll(): Promise<Status[]> {
-    return await db.statuses.toArray()
+    const statuses = await db.statuses.toArray()
+    return statuses.sort((a, b) => a.sort - b.sort)
   }
 
   /**
@@ -24,10 +25,11 @@ export class StatusRepository {
     page: number = 1,
     pageSize: number = 10
   ): Promise<Status[]> {
-    return await db.statuses
+    const statuses = await db.statuses
       .offset((page - 1) * pageSize)
       .limit(pageSize)
       .toArray()
+    return statuses.sort((a, b) => a.sort - b.sort)
   }
 
   /**
@@ -95,6 +97,14 @@ export class StatusRepository {
     await db.statuses.bulkDelete(ids)
   }
 
+  /**
+   * 按照sort排序
+   * @returns Promise<void>
+   */
+  async sort(): Promise<void> {
+    const statuses = await db.statuses.toArray()
+    await db.statuses.bulkPut(statuses.sort((a, b) => a.sort - b.sort))
+  }
   /**
    * 清空所有状态
    * @returns Promise<void>

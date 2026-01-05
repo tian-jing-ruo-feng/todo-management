@@ -1,6 +1,19 @@
-import { Tag, type TableProps } from 'antd'
-import { Button, Space, Table } from 'antd'
 import type { ConfigItem } from '@/types/config'
+import {
+  DndContext,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  type DragEndEvent,
+} from '@dnd-kit/core'
+import { restrictToVerticalAxis } from '@dnd-kit/modifiers'
+import {
+  SortableContext,
+  useSortable,
+  verticalListSortingStrategy,
+} from '@dnd-kit/sortable'
+import { CSS } from '@dnd-kit/utilities'
+import { Button, Space, Table, Tag, type TableProps } from 'antd'
 
 export interface ConfigListProps {
   data: ConfigItem[]
@@ -11,6 +24,7 @@ export interface ConfigListProps {
   currentPage: number
   pageSize: number
   onPageChange: (page: number, pageSize: number) => void
+  onSortChange: (activeId: string, overId: string) => void
 }
 
 export default function ConfigList({
@@ -22,6 +36,7 @@ export default function ConfigList({
   currentPage,
   pageSize,
   onPageChange,
+  onSortChange,
 }: ConfigListProps) {
   const columns: TableProps<ConfigItem>['columns'] = [
     {
@@ -79,26 +94,93 @@ export default function ConfigList({
       ),
     },
   ]
-  // 分页状态由父组件控制，移除本地冗余状态
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: {
+        // https://docs.dndkit.com/api-documentation/sensors/pointer#activation-constraints
+        distance: 1,
+      },
+    })
+  )
 
+  const onDragEnd = ({ active, over }: DragEndEvent) => {
+    if (active.id !== over?.id) {
+      // setDataSource((prev) => {
+      //   const activeIndex = prev.findIndex((i) => i.key === active.id)
+      //   const overIndex = prev.findIndex((i) => i.key === over?.id)
+      //   return arrayMove(prev, activeIndex, overIndex)
+      // })
+      onSortChange(active.id as string, over?.id as string)
+    }
+  }
+
+  interface RowProps extends React.HTMLAttributes<HTMLTableRowElement> {
+    'data-row-key': string
+  }
+
+  const Row: React.FC<Readonly<RowProps>> = (props) => {
+    const {
+      attributes,
+      listeners,
+      setNodeRef,
+      transform,
+      transition,
+      isDragging,
+    } = useSortable({
+      id: props['data-row-key'],
+    })
+
+    const style: React.CSSProperties = {
+      ...props.style,
+      transform: CSS.Translate.toString(transform),
+      transition,
+      cursor: 'move',
+      ...(isDragging ? { position: 'relative', zIndex: 9999 } : {}),
+    }
+
+    return (
+      <tr
+        {...props}
+        ref={setNodeRef}
+        style={style}
+        {...attributes}
+        {...listeners}
+      />
+    )
+  }
   return (
-    <Table<ConfigItem>
-      columns={columns}
-      dataSource={data}
-      rowKey="id"
-      loading={loading}
-      pagination={{
-        current: currentPage,
-        pageSize: pageSize,
-        total: data.length,
-        showSizeChanger: true,
-        pageSizeOptions: ['5', '10', '20', '50'],
-        showQuickJumper: true,
-        showTotal: (total, range) =>
-          `第 ${range[0]}-${range[1]} 条，共 ${total} 条`,
-        onChange: onPageChange,
-      }}
-      scroll={{ x: 800 }}
-    />
+    <DndContext
+      sensors={sensors}
+      modifiers={[restrictToVerticalAxis]}
+      onDragEnd={onDragEnd}
+    >
+      <SortableContext
+        // rowKey array
+        items={data.map((i) => i.id)}
+        strategy={verticalListSortingStrategy}
+      >
+        <Table<ConfigItem>
+          components={{
+            body: { row: Row },
+          }}
+          columns={columns}
+          dataSource={data}
+          rowKey="id"
+          loading={loading}
+          pagination={{
+            current: currentPage,
+            pageSize: pageSize,
+            total: data.length,
+            showSizeChanger: true,
+            pageSizeOptions: ['5', '10', '20', '50'],
+            showQuickJumper: true,
+            showTotal: (total, range) =>
+              `第 ${range[0]}-${range[1]} 条，共 ${total} 条`,
+            onChange: onPageChange,
+          }}
+          scroll={{ x: 800 }}
+        />
+      </SortableContext>
+    </DndContext>
   )
 }

@@ -11,4 +11,8 @@ export interface Group {
    * 分组颜色
    */
   color: string
+  /**
+   * 排序
+   */
+  sort: number
 }

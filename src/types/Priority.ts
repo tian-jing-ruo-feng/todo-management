@@ -11,4 +11,8 @@ export interface Priority {
    * 优先级颜色
    */
   color: string
+  /**
+   * 排序
+   */
+  sort: number
 }

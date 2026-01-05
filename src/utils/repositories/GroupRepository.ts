@@ -11,7 +11,8 @@ export class GroupRepository {
    * @returns Promise<Group[]> 分组列表
    */
   async getAll(): Promise<Group[]> {
-    return await db.groups.toArray()
+    const groups = await db.groups.toArray()
+    return groups.sort((a, b) => a.sort - b.sort)
   }
 
   /**
@@ -24,10 +25,11 @@ export class GroupRepository {
     page: number = 1,
     pageSize: number = 10
   ): Promise<Group[]> {
-    return await db.groups
+    const groups = await db.groups
       .offset((page - 1) * pageSize)
       .limit(pageSize)
       .toArray()
+    return groups.sort((a, b) => a.sort - b.sort)
   }
 
   /**
@@ -101,6 +103,15 @@ export class GroupRepository {
    */
   async clear(): Promise<void> {
     await db.groups.clear()
+  }
+
+  /**
+   * 按照sort排序
+   * @returns Promise<void>
+   */
+  async sort(): Promise<void> {
+    const groups = await db.groups.toArray()
+    await db.priorities.bulkPut(groups.sort((a, b) => a.sort - b.sort))
   }
 
   /**

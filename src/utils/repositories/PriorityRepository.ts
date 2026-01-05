@@ -11,7 +11,8 @@ export class PriorityRepository {
    * @returns Promise<Priority[]> 优先级列表
    */
   async getAll(): Promise<Priority[]> {
-    return await db.priorities.toArray()
+    const priorities = await db.priorities.toArray()
+    return priorities.sort((a, b) => a.sort - b.sort)
   }
 
   /**
@@ -24,10 +25,11 @@ export class PriorityRepository {
     page: number = 1,
     pageSize: number = 10
   ): Promise<Priority[]> {
-    return await db.priorities
+    const priorities = await db.priorities
       .offset((page - 1) * pageSize)
       .limit(pageSize)
       .toArray()
+    return priorities.sort((a, b) => a.sort - b.sort)
   }
 
   /**
@@ -101,6 +103,15 @@ export class PriorityRepository {
    */
   async clear(): Promise<void> {
     await db.priorities.clear()
+  }
+
+  /**
+   * 按照sort排序
+   * @returns Promise<void>
+   */
+  async sort(): Promise<void> {
+    const priorities = await db.priorities.toArray()
+    await db.priorities.bulkPut(priorities.sort((a, b) => a.sort - b.sort))
   }
 
   /**

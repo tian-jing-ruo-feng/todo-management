@@ -11,4 +11,8 @@ export interface Status {
    * 状态颜色
    */
   color: string
+  /**
+   * 排序
+   */
+  sort: number
 }

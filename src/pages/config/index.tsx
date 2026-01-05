@@ -19,6 +19,7 @@ import {
   ToolOutlined,
   UploadOutlined,
 } from '@ant-design/icons'
+import { arrayMove } from '@dnd-kit/sortable'
 import { Button, Card, Empty, Spin, Upload, message } from 'antd'
 import React, { useEffect, useState } from 'react'
 import ConfigForm from './ConfigForm'
@@ -160,6 +161,33 @@ export default function ConfigPage() {
   const handleDelete = (item: ConfigItem) => {
     setDeletingItem(item)
     setDeleteVisible(true)
+  }
+
+  // 排序处理
+  const handleSortChange = async (activeId: string, overId: string) => {
+    try {
+      const activeIndex = data.findIndex((i) => i.id === activeId)
+      const overIndex = data.findIndex((i) => i.id === overId)
+      const sortedData = arrayMove(data, activeIndex, overIndex).map(
+        (item, index) => ({ ...item, sort: index + 1 })
+      )
+      // 保存排序结果
+      switch (activeKey) {
+        case ConfigType.Status:
+          await statusRepository.bulkUpdate(sortedData)
+          break
+        case ConfigType.Priority:
+          await priorityRepository.bulkUpdate(sortedData)
+          break
+        case ConfigType.Group:
+          await groupRepository.bulkUpdate(sortedData)
+          break
+      }
+      loadData(activeKey)
+    } catch (error) {
+      console.error('排序失败:', error)
+      message.error('排序失败')
+    }
   }
 
   // 分页变化
@@ -353,6 +381,7 @@ export default function ConfigPage() {
             onPageChange={handlePageChange}
             onEdit={handleEdit}
             onDelete={handleDelete}
+            onSortChange={handleSortChange}
           />
         )}
       </Card>
