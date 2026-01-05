@@ -27,6 +27,10 @@ export interface ConfigListProps {
   onSortChange: (activeId: string, overId: string) => void
 }
 
+export interface RowProps extends React.HTMLAttributes<HTMLTableRowElement> {
+  'data-row-key': string
+}
+
 export default function ConfigList({
   data,
   loading,
@@ -38,6 +42,36 @@ export default function ConfigList({
   onPageChange,
   onSortChange,
 }: ConfigListProps) {
+  const Row: React.FC<Readonly<RowProps>> = (props) => {
+    const {
+      attributes,
+      listeners,
+      setNodeRef,
+      transform,
+      transition,
+      isDragging,
+    } = useSortable({
+      id: props['data-row-key'],
+    })
+
+    const style: React.CSSProperties = {
+      ...props.style,
+      transform: CSS.Translate.toString(transform),
+      transition,
+      cursor: 'move',
+      ...(isDragging ? { position: 'relative', zIndex: 9999 } : {}),
+    }
+
+    return (
+      <tr
+        {...props}
+        ref={setNodeRef}
+        style={style}
+        {...attributes}
+        {...listeners}
+      />
+    )
+  }
   const columns: TableProps<ConfigItem>['columns'] = [
     {
       title: 'ID',
@@ -105,49 +139,10 @@ export default function ConfigList({
 
   const onDragEnd = ({ active, over }: DragEndEvent) => {
     if (active.id !== over?.id) {
-      // setDataSource((prev) => {
-      //   const activeIndex = prev.findIndex((i) => i.key === active.id)
-      //   const overIndex = prev.findIndex((i) => i.key === over?.id)
-      //   return arrayMove(prev, activeIndex, overIndex)
-      // })
       onSortChange(active.id as string, over?.id as string)
     }
   }
 
-  interface RowProps extends React.HTMLAttributes<HTMLTableRowElement> {
-    'data-row-key': string
-  }
-
-  const Row: React.FC<Readonly<RowProps>> = (props) => {
-    const {
-      attributes,
-      listeners,
-      setNodeRef,
-      transform,
-      transition,
-      isDragging,
-    } = useSortable({
-      id: props['data-row-key'],
-    })
-
-    const style: React.CSSProperties = {
-      ...props.style,
-      transform: CSS.Translate.toString(transform),
-      transition,
-      cursor: 'move',
-      ...(isDragging ? { position: 'relative', zIndex: 9999 } : {}),
-    }
-
-    return (
-      <tr
-        {...props}
-        ref={setNodeRef}
-        style={style}
-        {...attributes}
-        {...listeners}
-      />
-    )
-  }
   return (
     <DndContext
       sensors={sensors}

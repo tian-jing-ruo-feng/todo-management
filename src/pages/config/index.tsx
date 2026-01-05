@@ -12,6 +12,7 @@ import {
   statusRepository,
 } from '@/utils/repositories'
 import {
+  DownloadOutlined,
   FlagOutlined,
   GroupOutlined,
   PlusOutlined,
@@ -21,7 +22,9 @@ import {
 } from '@ant-design/icons'
 import { arrayMove } from '@dnd-kit/sortable'
 import { Button, Card, Empty, Spin, Upload, message } from 'antd'
+import dayjs from 'dayjs'
 import React, { useEffect, useState } from 'react'
+import { downloadFile } from '../../utils/common'
 import ConfigForm from './ConfigForm'
 import ConfigList from './ConfigList'
 import ConfigTabs from './ConfigTabs'
@@ -48,6 +51,7 @@ export default function ConfigPage() {
 
   // 导入相关
   const [uploading, setUploading] = useState(false)
+  const [isExporting, setIsExporting] = useState(false)
 
   // 加载数据
   const loadData = async (type: string, page = 1, pageSize = 10) => {
@@ -117,7 +121,6 @@ export default function ConfigPage() {
 
   // 保存表单
   const handleSave = async (values: ConfigFormData) => {
-    console.log(values, '<<<<< values')
     try {
       const newData: ConfigItem = {
         id: editingItem?.id || `${activeKey}_${Date.now()}`,
@@ -161,6 +164,35 @@ export default function ConfigPage() {
   const handleDelete = (item: ConfigItem) => {
     setDeletingItem(item)
     setDeleteVisible(true)
+  }
+  // 导出处理
+  const handleExport = async () => {
+    let jsonData
+    try {
+      setIsExporting(true)
+      switch (activeKey) {
+        case ConfigType.Status:
+          jsonData = await statusRepository.getAll()
+          break
+        case ConfigType.Priority:
+          jsonData = await priorityRepository.getAll()
+          break
+        case ConfigType.Group:
+          jsonData = await groupRepository.getAll()
+          break
+      }
+      const fileName = `${activeKey}-${dayjs().format('YYYY-MM-DD-HH-mm-ss')}.json`
+      const blob = new Blob([JSON.stringify(jsonData)], {
+        type: 'application/json',
+      })
+      const url = URL.createObjectURL(blob)
+      downloadFile(url, fileName)
+    } catch (error) {
+      console.error('导出失败:', error)
+      message.error('导出失败')
+    } finally {
+      setIsExporting(false)
+    }
   }
 
   // 排序处理
@@ -358,6 +390,14 @@ export default function ConfigPage() {
                 导入JSON
               </Button>
             </Upload>
+            <Button
+              type="default"
+              icon={<DownloadOutlined />}
+              loading={isExporting}
+              onClick={handleExport}
+            >
+              导出JSON
+            </Button>
             <Button type="primary" icon={<PlusOutlined />} onClick={handleAdd}>
               新增配置
             </Button>
