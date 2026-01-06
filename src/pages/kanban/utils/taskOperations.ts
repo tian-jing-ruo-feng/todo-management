@@ -44,13 +44,10 @@ export const rebuildTasksList = (
       if (originalTask) {
         newTasks.push({
           ...originalTask,
-          status: colId as Task['status'],
           sort: task.sort,
-          updateTime:
-            task.id === activeTaskId
-              ? new Date().toISOString()
-              : originalTask.updateTime,
         })
+      } else {
+        newTasks.push({ ...task, updateTime: new Date().toISOString() })
       }
     })
   })
@@ -110,19 +107,10 @@ export const reorderTasksInColumn = (
  * 保存任务到数据库并同步状态
  */
 export const saveTasksToDatabaseAndSync = async (
-  updatedTasks: Task[],
-  originalTasks: Task[],
-  tasksByColumn: Record<string, Task[]>,
-  onTasksChange?: (tasks: Task[]) => void
+  updatedTasks: Task[]
 ): Promise<void> => {
   try {
     await saveTaskChanges(updatedTasks)
-
-    const newTasks = rebuildTasksList(tasksByColumn, originalTasks)
-
-    if (onTasksChange) {
-      onTasksChange(newTasks)
-    }
   } catch (error) {
     console.error('保存任务失败:', error)
   }

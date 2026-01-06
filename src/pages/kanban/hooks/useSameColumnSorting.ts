@@ -69,12 +69,7 @@ export function useSameColumnSorting({
       memoizedDeps.setTasksByColumn(newTasksByColumn)
 
       // 异步保存到数据库和父组件状态
-      saveTasksToDatabaseAndSync(
-        updatedTasks,
-        memoizedDeps.originalTasks,
-        newTasksByColumn,
-        memoizedDeps.onTasksChange
-      )
+      saveTasksToDatabaseAndSync(updatedTasks)
 
       // 调用拖拽结束回调
       if (memoizedDeps.onDragEndCallback) {

@@ -208,7 +208,7 @@ export default function KanbanBoard({
   const { handleSameColumnSorting } = useSameColumnSorting({
     tasksByColumn,
     setTasksByColumn,
-    tasksSnapshot: tasksByColumn, // 直接使用当前状态
+    tasksSnapshot: { ...tasksByColumn }, // 直接使用当前状态
     originalTasks: tasks,
     onTasksChange,
   })
