@@ -27,6 +27,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import KanbanColumn from './KanbanColumn'
 import KanbanItem from './KanbanItem'
 import { useCrossColumnDragging, useSameColumnSorting } from './hooks'
+import { findTargetColumn } from './utils/taskOperations'
 
 interface Column {
   id: string
@@ -36,13 +37,11 @@ interface Column {
 
 interface KanbanBoardProps {
   tasks: Task[]
-  onTasksChange?: (tasks: Task[]) => void
   onUploadSuccess: () => void
 }
 
 export default function KanbanBoard({
   tasks,
-  onTasksChange,
   onUploadSuccess,
 }: KanbanBoardProps) {
   // 动态状态和列管理
@@ -210,7 +209,6 @@ export default function KanbanBoard({
     setTasksByColumn,
     tasksSnapshot: { ...tasksByColumn }, // 直接使用当前状态
     originalTasks: tasks,
-    onTasksChange,
   })
 
   const {
@@ -223,7 +221,6 @@ export default function KanbanBoard({
     setTasksByColumn,
     columns,
     originalTasks: tasks,
-    onTasksChange,
   })
 
   // 处理任务更新
@@ -234,13 +231,6 @@ export default function KanbanBoard({
         await saveTask(updatedTask)
       } catch (error) {
         console.error('保存任务失败:', error)
-      }
-
-      if (onTasksChange) {
-        const updatedTasks = tasks.map((task) =>
-          task.id === updatedTask.id ? updatedTask : task
-        )
-        onTasksChange(updatedTasks)
       }
 
       // 更新本地状态 - 处理跨列移动
@@ -271,7 +261,7 @@ export default function KanbanBoard({
         return newTasksByColumn
       })
     },
-    [tasks, onTasksChange, getColumnByStatus]
+    [tasks, getColumnByStatus]
   )
 
   // 打开编辑弹窗
@@ -302,39 +292,30 @@ export default function KanbanBoard({
   }, [])
 
   // 删除任务，弹出确认删除提示
-  const handleDeleteTask = useCallback(
-    (task: Task) => {
-      Modal.confirm({
-        title: '确认删除任务？',
-        content: '删除后将无法恢复，请确认是否删除。',
-        onOk: async () => {
-          try {
-            await deleteTask(task.id)
+  const handleDeleteTask = useCallback((task: Task) => {
+    Modal.confirm({
+      title: '确认删除任务？',
+      content: '删除后将无法恢复，请确认是否删除。',
+      onOk: async () => {
+        try {
+          await deleteTask(task.id)
 
-            // 更新父组件状态
-            if (onTasksChange) {
-              const updatedTasks = tasks.filter((t) => t.id !== task.id)
-              onTasksChange(updatedTasks)
-            }
-
-            // 更新本地状态
-            setTasksByColumn((prev) => {
-              const newTasksByColumn = { ...prev }
-              Object.keys(newTasksByColumn).forEach((columnId) => {
-                newTasksByColumn[columnId] = newTasksByColumn[columnId].filter(
-                  (t) => t.id !== task.id
-                )
-              })
-              return newTasksByColumn
+          // 更新本地状态
+          setTasksByColumn((prev) => {
+            const newTasksByColumn = { ...prev }
+            Object.keys(newTasksByColumn).forEach((columnId) => {
+              newTasksByColumn[columnId] = newTasksByColumn[columnId].filter(
+                (t) => t.id !== task.id
+              )
             })
-          } catch (error) {
-            console.error('删除任务失败:', error)
-          }
-        },
-      })
-    },
-    [tasks, onTasksChange]
-  )
+            return newTasksByColumn
+          })
+        } catch (error) {
+          console.error('删除任务失败:', error)
+        }
+      },
+    })
+  }, [])
 
   const handleCreateModalClose = useCallback(() => {
     setCreateModalVisible(false)
@@ -357,12 +338,6 @@ export default function KanbanBoard({
         return // 如果保存失败，直接返回
       }
 
-      // 更新父组件状态，使用包含sort字段的任务
-      if (onTasksChange) {
-        const updatedTasks = [...tasks, newTaskWithSort]
-        onTasksChange(updatedTasks)
-      }
-
       // 更新本地状态，正确添加新任务到对应列中
       const columnId = getColumnByStatus(newTaskWithSort.status)
       setTasksByColumn((prev) => {
@@ -378,7 +353,7 @@ export default function KanbanBoard({
         return newTasksByColumn
       })
     },
-    [tasks, onTasksChange, getColumnByStatus]
+    [getColumnByStatus]
   )
 
   const sensors = useSensors(
@@ -446,7 +421,7 @@ export default function KanbanBoard({
       // 区分处理同列排序和跨列移动
       if (dragState.sourceColumn === targetColumnId) {
         // 同列内排序：使用同列排序hook
-        handleSameColumnSorting(event, activeId, overId, targetColumnId)
+        // handleSameColumnSorting(event, activeId, overId, targetColumnId)
       } else {
         // 跨列移动：只记录最后一次目标列，避免重复处理
         updateTargetColumn(targetColumnId)
@@ -455,7 +430,7 @@ export default function KanbanBoard({
     [
       columns,
       tasksByColumn,
-      handleSameColumnSorting,
+      // handleSameColumnSorting,
       updateTargetColumn,
       dragStateRef,
     ]
@@ -465,14 +440,35 @@ export default function KanbanBoard({
     (event: DragEndEvent) => {
       const draggedTask = draggedTaskRef.current
       if (!draggedTask) return
+      const { active, over } = event
+      if (!over) return
+      const activeId = active.id as string
+      const overId = over.id as string
+      const dragState = dragStateRef.current
+      const sourceColumn = dragState.sourceColumn
+      if (!sourceColumn) return
+      // 确定最终的目标列
+      const foundTargetColumn = findTargetColumn(overId, columns, tasksByColumn)
+      const targetColumnId = foundTargetColumn || sourceColumn
 
-      // 使用跨列拖拽hook处理结束逻辑
-      handleCrossColumnMove(event, draggedTask)
+      if (sourceColumn === targetColumnId) {
+        // 同列
+        handleSameColumnSorting(event, activeId, overId, draggedTask.status)
+      } else {
+        // 使用跨列拖拽hook处理结束逻辑
+        handleCrossColumnMove(event, draggedTask)
+      }
 
       setActiveTask(null)
       draggedTaskRef.current = null
     },
-    [handleCrossColumnMove]
+    [
+      handleSameColumnSorting,
+      handleCrossColumnMove,
+      columns,
+      tasksByColumn,
+      dragStateRef,
+    ]
   )
 
   return (

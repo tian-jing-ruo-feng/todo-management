@@ -100,7 +100,7 @@ const db = new TaskDatabase()
 export const saveTask = async (task: Task): Promise<string> => {
   const taskData = {
     ...task,
-    updateTime: new Date().toISOString(),
+    // updateTime: new Date().toISOString(),
   }
 
   // 如果任务存在id，则更新；否则添加

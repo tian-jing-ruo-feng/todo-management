@@ -11,8 +11,6 @@ interface UseSameColumnSortingProps {
   setTasksByColumn: (tasks: Record<string, Task[]>) => void
   tasksSnapshot: Record<string, Task[]>
   originalTasks: Task[]
-  onTasksChange?: (tasks: Task[]) => void
-  onDragEndCallback?: (activeId: string, columnId: string) => void
 }
 
 export function useSameColumnSorting({
@@ -20,8 +18,6 @@ export function useSameColumnSorting({
   setTasksByColumn,
   tasksSnapshot,
   originalTasks,
-  onTasksChange,
-  onDragEndCallback,
 }: UseSameColumnSortingProps) {
   // 记忆化依赖项，避免不必要的重新创建
   const memoizedDeps = useMemo(
@@ -30,17 +26,8 @@ export function useSameColumnSorting({
       setTasksByColumn,
       tasksSnapshot,
       originalTasks,
-      onTasksChange,
-      onDragEndCallback,
     }),
-    [
-      tasksByColumn,
-      setTasksByColumn,
-      tasksSnapshot,
-      originalTasks,
-      onTasksChange,
-      onDragEndCallback,
-    ]
+    [tasksByColumn, setTasksByColumn, tasksSnapshot, originalTasks]
   )
 
   const handleSameColumnSorting = useCallback(
@@ -70,11 +57,6 @@ export function useSameColumnSorting({
 
       // 异步保存到数据库和父组件状态
       saveTasksToDatabaseAndSync(updatedTasks)
-
-      // 调用拖拽结束回调
-      if (memoizedDeps.onDragEndCallback) {
-        memoizedDeps.onDragEndCallback(activeId, columnId)
-      }
     },
     [memoizedDeps]
   )

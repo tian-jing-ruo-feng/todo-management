@@ -37,6 +37,7 @@ export const rebuildTasksList = (
 ): Task[] => {
   const originalTasksMap = new Map(originalTasks.map((task) => [task.id, task]))
   const newTasks: Task[] = []
+  const activeTask = activeTaskId ? originalTasksMap.get(activeTaskId) : null
 
   Object.entries(tasksByColumn).forEach(([colId, colTasks]) => {
     colTasks.forEach((task) => {
@@ -46,6 +47,10 @@ export const rebuildTasksList = (
           ...originalTask,
           status: colId,
           sort: task.sort,
+          updateTime:
+            activeTask?.id === originalTask.id
+              ? new Date().toISOString()
+              : originalTask.updateTime,
         })
       } else {
         newTasks.push({
@@ -97,12 +102,12 @@ export const reorderTasksInColumn = (
 
   const newTasks = tasks.filter((task) => task.id !== activeId)
 
-  let insertIndex = overIndex
-  if (currentIndex < overIndex) {
-    insertIndex = overIndex - 1
-  }
+  const insertIndex = overIndex
 
-  newTasks.splice(insertIndex, 0, activeTask)
+  newTasks.splice(insertIndex, 0, {
+    ...activeTask,
+    updateTime: new Date().toISOString(),
+  })
 
   return updateTasksSortOrder(newTasks)
 }
