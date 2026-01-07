@@ -194,7 +194,7 @@ export default function KanbanItem({
         }`}
       >
         {task.content && (
-          <div className="text-gray-600 text-sm mb-2">
+          <div className="text-gray-600 text-xs mb-2">
             {isHTMLContent(task.content) ? (
               <div
                 dangerouslySetInnerHTML={{ __html: sanitizeHTML(task.content) }}

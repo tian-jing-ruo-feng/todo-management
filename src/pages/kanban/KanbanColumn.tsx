@@ -1,8 +1,7 @@
 import type { Task } from '@/types/Task'
-import { PlusOutlined } from '@ant-design/icons'
 import { useDroppable } from '@dnd-kit/core'
 import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable'
-import { Button, Card, Typography } from 'antd'
+import { Card, Typography } from 'antd'
 import KanbanItem from './KanbanItem'
 
 const { Title } = Typography
@@ -13,7 +12,6 @@ interface KanbanColumnProps {
   tasks: Task[]
   color?: string
   onEditTask?: (task: Task) => void
-  onAddTask?: (columnId: string) => void
   onDeleteTask?: (task: Task) => void
 }
 
@@ -23,7 +21,6 @@ export default function KanbanColumn({
   tasks,
   color = '#1890ff',
   onEditTask,
-  onAddTask,
   onDeleteTask,
 }: KanbanColumnProps) {
   const { setNodeRef, isOver } = useDroppable({
@@ -41,40 +38,17 @@ export default function KanbanColumn({
         classNames={{ body: 'size-full overflow-hidden' }}
         title={
           <div className="flex items-center justify-between">
-            <Title
-              level={5}
-              className={`mb-0 transition-all duration-300 ${
-                isOver ? 'text-blue-700 font-medium' : 'font-normal'
-              }`}
-              style={{ color: isOver ? undefined : color }}
-            >
+            <Title level={5} style={{ color: isOver ? undefined : color }}>
               {title}
             </Title>
-            <span
-              className={`text-sm transition-all duration-300 ${
-                isOver ? 'text-blue-600' : 'text-gray-500'
-              }`}
-            >
-              {tasks.length}
-            </span>
+            <span>{tasks.length}</span>
           </div>
         }
       >
-        <div className="flex flex-col gap-3 h-full overflow-hidden">
-          {/* 固定在标题下方的添加按钮 */}
-          <div>
-            <Button
-              type="primary"
-              icon={<PlusOutlined />}
-              onClick={() => onAddTask?.(id)}
-              className="w-full shadow-md hover:shadow-lg transition-all duration-300"
-            >
-              添加任务
-            </Button>
-          </div>
+        <div className="flex flex-col h-full overflow-hidden">
           <div
             ref={setNodeRef} // 将拖拽区域设置为除去标题和按钮后的内容区域
-            className={`space-y-2 flex-1 overflow-y-auto h-full pt-8 px-3 pb-3 rounded-lg transition-all duration-300 ${
+            className={`space-y-2 flex-1 overflow-y-auto h-full px-3 pb-3 rounded-lg transition-all duration-300 ${
               isOver
                 ? 'bg-linear-to-br from-blue-100/40 via-white/30 to-indigo-100/20 border-3 border-dashed border-blue-400'
                 : 'bg-gray-50/30'

@@ -6,7 +6,11 @@ import {
   priorityRepository,
   statusRepository,
 } from '@/utils/repositories'
-import { DownloadOutlined, UploadOutlined } from '@ant-design/icons'
+import {
+  DownloadOutlined,
+  PlusOutlined,
+  UploadOutlined,
+} from '@ant-design/icons'
 import { Button, Form, Input, Select, Upload, message } from 'antd'
 import dayjs from 'dayjs'
 import { useEffect, useState } from 'react'
@@ -18,6 +22,7 @@ interface TaskFilterFormProps {
   onFilterChange: (filters: TaskFilterValues) => void
   onReset: () => void
   onUploadSuccess: () => void
+  onAddTask?: (columnId?: string) => void
 }
 
 export interface TaskFilterValues {
@@ -31,6 +36,7 @@ export default function TaskFilterForm({
   onFilterChange,
   onReset,
   onUploadSuccess,
+  onAddTask,
 }: TaskFilterFormProps) {
   const [form] = Form.useForm()
   const [statusList, setStatusList] = useState<Status[]>([])
@@ -232,6 +238,15 @@ export default function TaskFilterForm({
                 导入JSON
               </Button>
             </Upload>
+            <Button
+              type="primary"
+              disabled={!statusList || statusList.length === 0}
+              icon={<PlusOutlined />}
+              onClick={() => onAddTask?.()}
+              className="w-full shadow-md hover:shadow-lg transition-all duration-300"
+            >
+              添加任务
+            </Button>
           </div>
         </Form.Item>
       </Form>

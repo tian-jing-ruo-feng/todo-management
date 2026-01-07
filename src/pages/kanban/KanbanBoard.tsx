@@ -285,11 +285,17 @@ export default function KanbanBoard({
   )
 
   // 打开新增任务弹窗
-  const handleAddTask = useCallback((columnId: string) => {
-    // 直接使用列ID作为状态ID
-    setDefaultColumnId(columnId)
-    setCreateModalVisible(true)
-  }, [])
+  const handleAddTask = useCallback(
+    (columnId?: string) => {
+      if (!columnId) {
+        columnId = statusList.length ? statusList[0].id : ''
+      }
+      // 直接使用列ID作为状态ID
+      setDefaultColumnId(columnId)
+      setCreateModalVisible(true)
+    },
+    [statusList]
+  )
 
   // 删除任务，弹出确认删除提示
   const handleDeleteTask = useCallback((task: Task) => {
@@ -472,13 +478,14 @@ export default function KanbanBoard({
   )
 
   return (
-    <div className="p-2 bg-gray-50 size-full overflow-hidden">
+    <div className="p-2 bg-gray-50 size-full overflow-hidden flex flex-col">
       {/* 任务过滤表单 */}
       <div className="mb-3">
         <TaskFilterForm
           onFilterChange={handleFilterChange}
           onReset={handleResetFilter}
           onUploadSuccess={onUploadSuccess}
+          onAddTask={handleAddTask}
         />
       </div>
       <DndContext
@@ -502,7 +509,6 @@ export default function KanbanBoard({
                 tasks={tasksByColumn[column.id] || []}
                 color={column.color}
                 onEditTask={handleEditTask}
-                onAddTask={handleAddTask}
                 onDeleteTask={handleDeleteTask}
               />
             ))}
