@@ -44,10 +44,14 @@ export const rebuildTasksList = (
       if (originalTask) {
         newTasks.push({
           ...originalTask,
+          status: colId,
           sort: task.sort,
         })
       } else {
-        newTasks.push({ ...task, updateTime: new Date().toISOString() })
+        newTasks.push({
+          ...task,
+          updateTime: new Date().toISOString(),
+        })
       }
     })
   })
