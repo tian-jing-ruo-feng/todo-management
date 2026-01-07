@@ -478,7 +478,7 @@ export default function KanbanBoard({
   )
 
   return (
-    <div className="p-2 bg-gray-50 size-full overflow-hidden flex flex-col">
+    <div className="bg-gray-50 size-full overflow-hidden flex flex-col">
       {/* 任务过滤表单 */}
       <div className="mb-3">
         <TaskFilterForm
@@ -500,7 +500,7 @@ export default function KanbanBoard({
           items={columns.map((col) => col.id)}
           strategy={rectSortingStrategy}
         >
-          <div className="flex gap-4 overflow-x-auto pb-4 size-full overflow-hidden">
+          <div className="flex gap-4 overflow-x-auto size-full overflow-hidden">
             {columns.map((column) => (
               <KanbanColumn
                 key={column.id}
