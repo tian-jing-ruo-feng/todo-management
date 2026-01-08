@@ -22,6 +22,12 @@ export default function SelectTab(props: SelectTabProps) {
       isActive: true,
     },
     {
+      title: '优先级视图',
+      key: 'priority',
+      icon: <TableOutlined />,
+      isActive: false,
+    },
+    {
       title: '配置管理',
       key: 'config',
       icon: <SettingOutlined />,

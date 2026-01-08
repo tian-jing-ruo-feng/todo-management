@@ -9,7 +9,7 @@ import { Button, Card, Tag } from 'antd'
 import dayjs from 'dayjs'
 import 'dayjs/locale/zh-cn'
 import relativeTime from 'dayjs/plugin/relativeTime'
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 
 // 配置 dayjs
 dayjs.extend(relativeTime)
@@ -100,25 +100,41 @@ export default function KanbanItem({
     return /<[^>]+>/.test(content)
   }
 
-  // 使用 dayjs 格式化时间显示
-  const formatTime = (dateString?: string): string => {
+  // 使用 dayjs 格式化时间显示（带记忆化优化）
+  const formatTime = useCallback((dateString?: string): string => {
     if (!dateString) return ''
 
     try {
       const date = dayjs(dateString)
       const now = dayjs()
-      const diffDays = now.diff(date, 'day')
+      const nowStartOfDay = now.startOf('day')
+      const dateStartOfDay = date.startOf('day')
 
-      if (diffDays === 0) {
-        // 今天 - 显示具体时间
-        return date.format('今天 HH:mm')
-      } else if (diffDays === 1) {
+      // 使用 startOfDay 准确判断是否是同一天
+      if (dateStartOfDay.isSame(nowStartOfDay, 'day')) {
+        // 今天 - 使用相对时间显示，更加直观
+        const diffMinutes = now.diff(date, 'minute')
+        if (diffMinutes < 1) {
+          return '刚刚'
+        } else if (diffMinutes < 60) {
+          return `${diffMinutes}分钟前`
+        } else if (diffMinutes < 120) {
+          return '1小时前'
+        } else if (diffMinutes < 1440) {
+          const hours = Math.floor(diffMinutes / 60)
+          return `${hours}小时前`
+        } else {
+          return date.format('今天 HH:mm')
+        }
+      } else if (
+        dateStartOfDay.isSame(nowStartOfDay.subtract(1, 'day'), 'day')
+      ) {
         // 昨天
         return date.format('昨天 HH:mm')
-      } else if (diffDays < 7) {
+      } else if (now.diff(dateStartOfDay, 'day') < 7) {
         // 本周内 - 显示星期几
         return date.format('dddd')
-      } else if (diffDays < 365) {
+      } else if (now.diff(dateStartOfDay, 'day') < 365) {
         // 本年内 - 显示月日
         return date.format('MM-DD')
       } else {
@@ -128,7 +144,7 @@ export default function KanbanItem({
     } catch {
       return ''
     }
-  }
+  }, [])
 
   return (
     <div
