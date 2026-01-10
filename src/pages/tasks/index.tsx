@@ -1,17 +1,20 @@
-import type { Task } from '@/types/Task'
-import { type TableProps, Flex, Table, Tag } from 'antd'
-// import TaskItem from './TaskItem'
 import SingleTag from '@/components/SingleTag'
 import mockGroups from '@/mock/group.json'
 import mockPriority from '@/mock/priority.json'
 import mockStatus from '@/mock/status.json'
-import mockTasks from '@/mock/task.json'
+import type { Task } from '@/types/Task'
+import { Flex, Table, Tag, type TableProps } from 'antd'
 import dayjs from 'dayjs'
-import { useState } from 'react'
-import KanbanPage from '../kanban'
+import { useCallback, useEffect, useState } from 'react'
+import TaskCreateModal from '../../components/TaskCreateModal'
+import TaskFilterForm from '../../components/TaskFilterForm'
+import type { Status } from '../../types/Status'
+import { getAllTasks, getAllTasksCount, saveTask } from '../../utils/db'
+import { statusRepository } from '../../utils/repositories'
 import ConfigPage from '../config'
+import KanbanPage from '../kanban'
+import { useTaskFilter } from '../kanban/hooks/useTaskFilter'
 import SelectTab, { type ButtonItem } from './SelectTab'
-import TaskStatistc from './TaskStatistc'
 
 const groupTags = (groups: string[]) => {
   const tags = groups.map((groupId) => {
@@ -71,7 +74,7 @@ const rowSelection: TableProps<Task>['rowSelection'] = {
   }),
 }
 
-const tasks: Task[] = mockTasks
+// const tasks: Task[] = mockTasks
 const columns: TableProps<Task>['columns'] = [
   {
     title: 'ID',
@@ -180,31 +183,118 @@ const columns: TableProps<Task>['columns'] = [
 ]
 export default function Tasks() {
   const [selectTab, setSelectTab] = useState<ButtonItem>()
+  const [statusList, setStatusList] = useState<Status[]>([])
+  const [createModalVisible, setCreateModalVisible] = useState(false)
+  const [defaultColumnId, setDefaultColumnId] = useState<string>('')
+  const beforeCreateTask = () => {}
+  const {
+    filteredTasks,
+    setTasks,
+    // handleAddTask,
+    handleFilterChange,
+    handleResetFilter,
+    handleUploadSuccess,
+  } = useTaskFilter({ statusList, beforeCreateTask })
+
+  useEffect(() => {
+    const loadStatusData = async () => {
+      try {
+        const statuses = await statusRepository.getAll()
+        setStatusList(statuses)
+      } catch (error) {
+        console.error('加载状态数据失败:', error)
+      }
+    }
+    loadStatusData()
+  }, [])
+
   const handleSelectTabChange = (item: ButtonItem) => {
     setSelectTab(item)
   }
+
+  const handleRefresh = useCallback(async () => {
+    const allTasks = await getAllTasks()
+    setTasks(allTasks)
+  }, [setTasks])
+
+  // 打开新增任务弹窗
+  const handleAddTask = useCallback(
+    (columnId?: string) => {
+      if (!columnId) {
+        columnId = statusList.length ? statusList[0].id : ''
+      }
+      // 直接使用列ID作为状态ID
+      setDefaultColumnId(columnId)
+      setCreateModalVisible(true)
+    },
+    [statusList]
+  )
+
+  const handleCreateModalClose = useCallback(() => {
+    setCreateModalVisible(false)
+    setDefaultColumnId('')
+  }, [])
+
+  // 创建新任务
+  const handleCreateTask = useCallback(
+    async (newTask: Task) => {
+      let newTaskWithSort = newTask
+      // 保存到数据库
+      try {
+        // 获取任务总数
+        const taskCount = await getAllTasksCount()
+        // 为新任务设置sort字段
+        newTaskWithSort = { ...newTask, sort: taskCount + 1 }
+        await saveTask(newTaskWithSort)
+        handleRefresh()
+      } catch (error) {
+        console.error('创建任务失败:', error)
+
+        return // 如果保存失败，直接返回
+      }
+    },
+    [handleRefresh]
+  )
 
   return (
     <div className="flex flex-col gap-3 p-3 size-full overflow-hidden">
       {/* <TaskStatistc></TaskStatistc> */}
       <SelectTab onChange={handleSelectTabChange}></SelectTab>
+      {/* TODO: 任务过滤表单 */}
+      <TaskFilterForm
+        onFilterChange={handleFilterChange}
+        onReset={handleResetFilter}
+        onUploadSuccess={handleUploadSuccess}
+        onAddTask={handleAddTask}
+      ></TaskFilterForm>
       {selectTab?.key === 'kanban' && (
         <div className="flex-1 size-full overflow-auto">
-          <KanbanPage></KanbanPage>
+          <KanbanPage
+            tasks={filteredTasks}
+            onRefresh={handleRefresh}
+          ></KanbanPage>
         </div>
       )}
 
       {selectTab?.key === 'config' && <ConfigPage />}
 
       {selectTab?.key === 'priority' && (
-        <Table<Task>
-          bordered
-          rowKey="id"
-          columns={columns}
-          dataSource={tasks}
-          rowSelection={{ type: 'checkbox', ...rowSelection }}
-        />
+        <div className="flex-1 size-full overflow-auto">
+          <Table<Task>
+            bordered
+            rowKey="id"
+            columns={columns}
+            dataSource={filteredTasks}
+            rowSelection={{ type: 'checkbox', ...rowSelection }}
+          />
+        </div>
       )}
+      <TaskCreateModal
+        visible={createModalVisible}
+        defaultStatus={defaultColumnId}
+        onClose={handleCreateModalClose}
+        onSave={handleCreateTask}
+      />
     </div>
   )
 }
