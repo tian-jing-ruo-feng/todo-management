@@ -1,8 +1,5 @@
 import TaskCreateModal from '@/components/TaskCreateModal'
 import TaskDetailModal from '@/components/TaskDetailModal'
-import TaskFilterForm, {
-  type TaskFilterValues,
-} from '@/components/TaskFilterForm'
 import type { Task } from '@/types/Task'
 import { deleteTask, getAllTasksCount, saveTask } from '@/utils/db'
 import { statusRepository } from '@/utils/repositories/StatusRepository'
@@ -38,12 +35,10 @@ interface Column {
 interface KanbanBoardProps {
   tasks: Task[]
   onUploadSuccess: () => void
+  onDragEnd: () => void
 }
 
-export default function KanbanBoard({
-  tasks,
-  onUploadSuccess,
-}: KanbanBoardProps) {
+export default function KanbanBoard({ tasks, onDragEnd }: KanbanBoardProps) {
   // 动态状态和列管理
   const [statusList, setStatusList] = useState<
     Array<{ id: string; name: string; color: string }>
@@ -83,9 +78,6 @@ export default function KanbanBoard({
     [statusList]
   )
 
-  // 过滤状态
-  const [filteredTasks, setFilteredTasks] = useState<Task[]>(tasks)
-
   const [tasksByColumn, setTasksByColumn] = useState<Record<string, Task[]>>(
     () => {
       const grouped: Record<string, Task[]> = {}
@@ -122,7 +114,7 @@ export default function KanbanBoard({
     })
 
     // 根据任务状态分配到不同列，并按sort倒序排列
-    filteredTasks.forEach((task) => {
+    tasks.forEach((task) => {
       const columnId = getColumnByStatus(task.status)
       if (grouped[columnId]) {
         grouped[columnId].push(task)
@@ -143,7 +135,7 @@ export default function KanbanBoard({
       setTasksByColumn(grouped)
     }, 0)
     return () => clearTimeout(timer)
-  }, [filteredTasks, columns, getColumnByStatus])
+  }, [tasks, columns, getColumnByStatus])
 
   const [activeTask, setActiveTask] = useState<Task | null>(null)
   const draggedTaskRef = useRef<Task | null>(null)
@@ -163,45 +155,6 @@ export default function KanbanBoard({
     },
     []
   )
-
-  // 处理过滤变化
-  const handleFilterChange = useCallback(
-    (filters: TaskFilterValues) => {
-      const { status, priority, group, keyword } = filters
-
-      let result = [...tasks]
-
-      if (status) {
-        result = result.filter((task) => task.status === status)
-      }
-      if (priority) {
-        result = result.filter((task) => task.priority === priority)
-      }
-      if (group) {
-        result = result.filter(
-          (task) => task.group && task.group.includes(group)
-        )
-      }
-      if (keyword) {
-        result = result.filter((task) =>
-          task.name.toLowerCase().includes(keyword.toLowerCase())
-        )
-      }
-
-      setFilteredTasks(result)
-    },
-    [tasks]
-  )
-
-  // 重置过滤
-  const handleResetFilter = useCallback(() => {
-    setFilteredTasks(tasks)
-  }, [tasks])
-
-  // 监听 tasks 变化，更新过滤后的任务
-  useEffect(() => {
-    setFilteredTasks(tasks)
-  }, [tasks])
 
   // 使用封装的hooks
   const { handleSameColumnSorting } = useSameColumnSorting({
@@ -261,7 +214,7 @@ export default function KanbanBoard({
         return newTasksByColumn
       })
     },
-    [tasks, getColumnByStatus]
+    [getColumnByStatus]
   )
 
   // 打开编辑弹窗
@@ -282,19 +235,6 @@ export default function KanbanBoard({
       handleTaskUpdate(updatedTask)
     },
     [handleTaskUpdate]
-  )
-
-  // 打开新增任务弹窗
-  const handleAddTask = useCallback(
-    (columnId?: string) => {
-      if (!columnId) {
-        columnId = statusList.length ? statusList[0].id : ''
-      }
-      // 直接使用列ID作为状态ID
-      setDefaultColumnId(columnId)
-      setCreateModalVisible(true)
-    },
-    [statusList]
   )
 
   // 删除任务，弹出确认删除提示
@@ -443,7 +383,7 @@ export default function KanbanBoard({
   )
 
   const handleDragEnd = useCallback(
-    (event: DragEndEvent) => {
+    async (event: DragEndEvent) => {
       const draggedTask = draggedTaskRef.current
       if (!draggedTask) return
       const { active, over } = event
@@ -459,11 +399,18 @@ export default function KanbanBoard({
 
       if (sourceColumn === targetColumnId) {
         // 同列
-        handleSameColumnSorting(event, activeId, overId, draggedTask.status)
+        await handleSameColumnSorting(
+          event,
+          activeId,
+          overId,
+          draggedTask.status
+        )
       } else {
         // 使用跨列拖拽hook处理结束逻辑
-        handleCrossColumnMove(event, draggedTask)
+        await handleCrossColumnMove(event, draggedTask)
       }
+
+      onDragEnd()
 
       setActiveTask(null)
       draggedTaskRef.current = null
@@ -474,20 +421,12 @@ export default function KanbanBoard({
       columns,
       tasksByColumn,
       dragStateRef,
+      onDragEnd,
     ]
   )
 
   return (
     <div className="bg-gray-50 size-full overflow-hidden flex flex-col">
-      {/* 任务过滤表单 */}
-      <div className="mb-3">
-        <TaskFilterForm
-          onFilterChange={handleFilterChange}
-          onReset={handleResetFilter}
-          onUploadSuccess={onUploadSuccess}
-          onAddTask={handleAddTask}
-        />
-      </div>
       <DndContext
         sensors={sensors}
         collisionDetection={rectIntersection}

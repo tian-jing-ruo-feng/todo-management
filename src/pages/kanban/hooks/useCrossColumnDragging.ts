@@ -61,7 +61,7 @@ export function useCrossColumnDragging({
   }, [])
 
   const handleCrossColumnMove = useCallback(
-    (event: DragEndEvent, draggedTask: Task) => {
+    async (event: DragEndEvent, draggedTask: Task) => {
       const { active, over } = event
       if (!over) return
 
@@ -118,7 +118,7 @@ export function useCrossColumnDragging({
       )
 
       // 异步保存所有任务到数据库（不阻塞UI）
-      saveTaskChanges(newTasks)
+      await saveTaskChanges(newTasks)
 
       // 重置拖拽状态
       dragStateRef.current = {
