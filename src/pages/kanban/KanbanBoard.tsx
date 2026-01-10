@@ -35,9 +35,10 @@ interface Column {
 interface KanbanBoardProps {
   tasks: Task[]
   onUploadSuccess: () => void
+  onDragEnd: () => void
 }
 
-export default function KanbanBoard({ tasks }: KanbanBoardProps) {
+export default function KanbanBoard({ tasks, onDragEnd }: KanbanBoardProps) {
   // 动态状态和列管理
   const [statusList, setStatusList] = useState<
     Array<{ id: string; name: string; color: string }>
@@ -236,19 +237,6 @@ export default function KanbanBoard({ tasks }: KanbanBoardProps) {
     [handleTaskUpdate]
   )
 
-  // 打开新增任务弹窗
-  const handleAddTask = useCallback(
-    (columnId?: string) => {
-      if (!columnId) {
-        columnId = statusList.length ? statusList[0].id : ''
-      }
-      // 直接使用列ID作为状态ID
-      setDefaultColumnId(columnId)
-      setCreateModalVisible(true)
-    },
-    [statusList]
-  )
-
   // 删除任务，弹出确认删除提示
   const handleDeleteTask = useCallback((task: Task) => {
     Modal.confirm({
@@ -395,7 +383,7 @@ export default function KanbanBoard({ tasks }: KanbanBoardProps) {
   )
 
   const handleDragEnd = useCallback(
-    (event: DragEndEvent) => {
+    async (event: DragEndEvent) => {
       const draggedTask = draggedTaskRef.current
       if (!draggedTask) return
       const { active, over } = event
@@ -411,11 +399,18 @@ export default function KanbanBoard({ tasks }: KanbanBoardProps) {
 
       if (sourceColumn === targetColumnId) {
         // 同列
-        handleSameColumnSorting(event, activeId, overId, draggedTask.status)
+        await handleSameColumnSorting(
+          event,
+          activeId,
+          overId,
+          draggedTask.status
+        )
       } else {
         // 使用跨列拖拽hook处理结束逻辑
-        handleCrossColumnMove(event, draggedTask)
+        await handleCrossColumnMove(event, draggedTask)
       }
+
+      onDragEnd()
 
       setActiveTask(null)
       draggedTaskRef.current = null
@@ -426,6 +421,7 @@ export default function KanbanBoard({ tasks }: KanbanBoardProps) {
       columns,
       tasksByColumn,
       dragStateRef,
+      onDragEnd,
     ]
   )
 

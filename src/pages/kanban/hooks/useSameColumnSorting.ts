@@ -31,7 +31,7 @@ export function useSameColumnSorting({
   )
 
   const handleSameColumnSorting = useCallback(
-    (
+    async (
       _event: DragOverEvent, // 使用下划线前缀表示未使用的参数
       activeId: string,
       overId: string,
@@ -56,7 +56,7 @@ export function useSameColumnSorting({
       memoizedDeps.setTasksByColumn(newTasksByColumn)
 
       // 异步保存到数据库和父组件状态
-      saveTasksToDatabaseAndSync(updatedTasks)
+      await saveTasksToDatabaseAndSync(updatedTasks)
     },
     [memoizedDeps]
   )

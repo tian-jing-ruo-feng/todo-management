@@ -25,6 +25,7 @@ export const useTaskFilter = ({
     const getTasks = async () => {
       const allTasks = await getAllTasks()
       setTasks(allTasks)
+      setFilteredTasks(allTasks)
     }
     getTasks()
   }, [])

@@ -7,5 +7,11 @@ interface KanbanPageProps {
 }
 
 export default function KanbanPage({ tasks, onRefresh }: KanbanPageProps) {
-  return <KanbanBoard tasks={tasks} onUploadSuccess={onRefresh} />
+  return (
+    <KanbanBoard
+      tasks={tasks}
+      onUploadSuccess={onRefresh}
+      onDragEnd={onRefresh}
+    />
+  )
 }
