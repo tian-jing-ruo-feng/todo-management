@@ -1,6 +1,6 @@
 import type { Group } from './Group'
-import type { Status } from './Status'
 import type { Priority } from './Priority'
+import type { Status } from './Status'
 
 export interface Task {
   /**
