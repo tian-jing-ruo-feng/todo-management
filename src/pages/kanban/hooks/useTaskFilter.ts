@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import type { TaskFilterValues } from '../../../components/TaskFilterForm'
 import type { Status } from '../../../types/Status'
 import type { Task } from '../../../types/Task'
@@ -18,49 +18,46 @@ export const useTaskFilter = ({
 }: TaskFilterProps) => {
   // 任务列表
   const [tasks, setTasks] = useState<Task[]>([])
-  // 过滤任务列表
-  const [filteredTasks, setFilteredTasks] = useState<Task[]>(tasks)
+  // 当前过滤条件
+  const [filters, setFilters] = useState<TaskFilterValues>({})
 
   useEffect(() => {
     const getTasks = async () => {
       const allTasks = await getAllTasks()
       setTasks(allTasks)
-      setFilteredTasks(allTasks)
     }
     getTasks()
   }, [])
 
-  useEffect(() => {
-    setFilteredTasks(tasks)
-  }, [tasks])
+  // 使用 useMemo 派生过滤后的任务列表
+  const filteredTasks = useMemo(() => {
+    const { status, priority, group, keyword } = filters
 
-  const handleFilterChange = useCallback(
-    (filters: TaskFilterValues) => {
-      const { status, priority, group, keyword } = filters
+    let result = [...tasks]
 
-      let result = [...tasks]
+    if (status) {
+      result = result.filter((task) => task.status === status)
+    }
+    if (priority) {
+      result = result.filter((task) => task.priority === priority)
+    }
+    if (group) {
+      result = result.filter((task) => task.group?.includes(group))
+    }
+    if (keyword) {
+      result = result.filter((task) => task.name.includes(keyword))
+    }
 
-      if (status) {
-        result = result.filter((task) => task.status === status)
-      }
-      if (priority) {
-        result = result.filter((task) => task.priority === priority)
-      }
-      if (group) {
-        result = result.filter((task) => task.group?.includes(group))
-      }
-      if (keyword) {
-        result = result.filter((task) => task.name.includes(keyword))
-      }
+    return result
+  }, [tasks, filters])
 
-      setFilteredTasks(result)
-    },
-    [tasks]
-  )
+  const handleFilterChange = useCallback((newFilters: TaskFilterValues) => {
+    setFilters(newFilters)
+  }, [])
 
   const handleResetFilter = useCallback(() => {
-    setFilteredTasks(tasks)
-  }, [tasks])
+    setFilters({})
+  }, [])
 
   // 打开新增任务弹窗
   const handleAddTask = useCallback(
@@ -83,7 +80,6 @@ export const useTaskFilter = ({
     tasks,
     filteredTasks,
     setTasks,
-    setFilteredTasks,
     handleFilterChange,
     handleResetFilter,
     handleAddTask,

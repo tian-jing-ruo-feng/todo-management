@@ -88,7 +88,6 @@ export default function TaskFilterForm({
   // 处理过滤变化
   const handleValuesChange = () => {
     const values = form.getFieldsValue()
-    console.log(values, 'form values')
     onFilterChange(values)
   }
 
