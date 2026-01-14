@@ -119,6 +119,7 @@ export default function Tasks() {
       <SelectTab onChange={handleSelectTabChange}></SelectTab>
       {/* 任务过滤表单 */}
       <TaskFilterForm
+        visible={selectTab?.key === 'kanban' || selectTab?.key === 'priority'}
         onFilterChange={handleFilterChange}
         onReset={handleResetFilter}
         onUploadSuccess={handleUploadSuccess}

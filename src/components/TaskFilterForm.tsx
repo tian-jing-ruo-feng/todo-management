@@ -19,6 +19,7 @@ import { downloadFile } from '../utils/common'
 import { getAllTasks, getTaskById, saveTask } from '../utils/db'
 
 interface TaskFilterFormProps {
+  visible: boolean
   onFilterChange: (filters: TaskFilterValues) => void
   onReset: () => void
   onUploadSuccess: () => void
@@ -33,6 +34,7 @@ export interface TaskFilterValues {
 }
 
 export default function TaskFilterForm({
+  visible,
   onFilterChange,
   onReset,
   onUploadSuccess,
@@ -173,82 +175,85 @@ export default function TaskFilterForm({
     reader.readAsText(file)
   }
   return (
-    <div className="bg-white p-4 rounded-lg shadow-sm">
-      <Form
-        form={form}
-        layout="inline"
-        onValuesChange={handleValuesChange}
-        className="flex-wrap gap-2"
-      >
-        <Form.Item name="status" label="状态">
-          <Select allowClear placeholder="全部状态" style={{ width: 150 }}>
-            {statusList.map((status) => (
-              <Select.Option key={status.id} value={status.id}>
-                <span style={{ color: status.color }}>●</span> {status.name}
-              </Select.Option>
-            ))}
-          </Select>
-        </Form.Item>
-        <Form.Item name="priority" label="优先级">
-          <Select allowClear placeholder="全部优先级" style={{ width: 120 }}>
-            {priorityList.map((priority) => (
-              <Select.Option key={priority.id} value={priority.id}>
-                <span style={{ color: priority.color }}>●</span> {priority.name}
-              </Select.Option>
-            ))}
-          </Select>
-        </Form.Item>
-        <Form.Item name="group" label="分组">
-          <Select allowClear placeholder="全部分组" style={{ width: 150 }}>
-            {groupList.map((group) => (
-              <Select.Option key={group.id} value={group.id}>
-                <span style={{ color: group.color }}>●</span> {group.name}
-              </Select.Option>
-            ))}
-          </Select>
-        </Form.Item>
-        <Form.Item name="keyword" label="任务名称">
-          <Input allowClear placeholder="搜索任务" style={{ width: 200 }} />
-        </Form.Item>
-        <Form.Item>
-          <Button onClick={handleReset}>重置</Button>
-        </Form.Item>
-        <Form.Item>
-          <div className="flex gap-2">
-            {/* 导出按钮 */}
-            <Button
-              loading={isExporting}
-              type="primary"
-              onClick={handleExport}
-              icon={<DownloadOutlined />}
-            >
-              导出
-            </Button>
-            {/* 导入按钮 */}
-            <Upload
-              accept=".json"
-              showUploadList={false}
-              beforeUpload={beforeUpload}
-              customRequest={({ file }) => handleImport(file as File)}
-              disabled={uploading}
-              maxCount={1}
-            >
-              <Button icon={<UploadOutlined />} loading={uploading}>
-                导入JSON
+    visible && (
+      <div className="bg-white p-4 rounded-lg shadow-sm">
+        <Form
+          form={form}
+          layout="inline"
+          onValuesChange={handleValuesChange}
+          className="flex-wrap gap-2"
+        >
+          <Form.Item name="status" label="状态">
+            <Select allowClear placeholder="全部状态" style={{ width: 150 }}>
+              {statusList.map((status) => (
+                <Select.Option key={status.id} value={status.id}>
+                  <span style={{ color: status.color }}>●</span> {status.name}
+                </Select.Option>
+              ))}
+            </Select>
+          </Form.Item>
+          <Form.Item name="priority" label="优先级">
+            <Select allowClear placeholder="全部优先级" style={{ width: 120 }}>
+              {priorityList.map((priority) => (
+                <Select.Option key={priority.id} value={priority.id}>
+                  <span style={{ color: priority.color }}>●</span>{' '}
+                  {priority.name}
+                </Select.Option>
+              ))}
+            </Select>
+          </Form.Item>
+          <Form.Item name="group" label="分组">
+            <Select allowClear placeholder="全部分组" style={{ width: 150 }}>
+              {groupList.map((group) => (
+                <Select.Option key={group.id} value={group.id}>
+                  <span style={{ color: group.color }}>●</span> {group.name}
+                </Select.Option>
+              ))}
+            </Select>
+          </Form.Item>
+          <Form.Item name="keyword" label="任务名称">
+            <Input allowClear placeholder="搜索任务" style={{ width: 200 }} />
+          </Form.Item>
+          <Form.Item>
+            <Button onClick={handleReset}>重置</Button>
+          </Form.Item>
+          <Form.Item>
+            <div className="flex gap-2">
+              {/* 导出按钮 */}
+              <Button
+                loading={isExporting}
+                type="primary"
+                onClick={handleExport}
+                icon={<DownloadOutlined />}
+              >
+                导出
               </Button>
-            </Upload>
-            <Button
-              type="primary"
-              disabled={!statusList || statusList.length === 0}
-              icon={<PlusOutlined />}
-              onClick={() => onAddTask?.()}
-              className="w-full shadow-md hover:shadow-lg transition-all duration-300"
-            >
-              添加任务
-            </Button>
-          </div>
-        </Form.Item>
-      </Form>
-    </div>
+              {/* 导入按钮 */}
+              <Upload
+                accept=".json"
+                showUploadList={false}
+                beforeUpload={beforeUpload}
+                customRequest={({ file }) => handleImport(file as File)}
+                disabled={uploading}
+                maxCount={1}
+              >
+                <Button icon={<UploadOutlined />} loading={uploading}>
+                  导入JSON
+                </Button>
+              </Upload>
+              <Button
+                type="primary"
+                disabled={!statusList || statusList.length === 0}
+                icon={<PlusOutlined />}
+                onClick={() => onAddTask?.()}
+                className="w-full shadow-md hover:shadow-lg transition-all duration-300"
+              >
+                添加任务
+              </Button>
+            </div>
+          </Form.Item>
+        </Form>
+      </div>
+    )
   )
 }
