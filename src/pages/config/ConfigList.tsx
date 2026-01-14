@@ -155,9 +155,11 @@ export default function ConfigList({
         strategy={verticalListSortingStrategy}
       >
         <Table<ConfigItem>
+          className="size-full flex flex-col flex-1 overflow-hidden"
           components={{
             body: { row: Row },
           }}
+          scroll={{ y: 'calc(100% - 64px)' }} // 减去分页器高度
           columns={columns}
           dataSource={data}
           rowKey="id"
@@ -173,7 +175,6 @@ export default function ConfigList({
               `第 ${range[0]}-${range[1]} 条，共 ${total} 条`,
             onChange: onPageChange,
           }}
-          scroll={{ x: 800 }}
         />
       </SortableContext>
     </DndContext>

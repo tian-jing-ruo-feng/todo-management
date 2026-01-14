@@ -134,12 +134,11 @@ export default function TaskTable({
 
   return (
     <Table<Task>
-      className="size-full flex flex-col"
+      className="size-full flex flex-col flex-1"
       bordered
       rowKey="id"
       columns={columns}
-      scroll={{ y: 55 * 5, scrollToFirstRowOnChange: true }}
-      // scroll={{ y: 'calc(100% - 64px)' }} // 减去分页器高度
+      scroll={{ y: 'calc(100% - 64px)' }} // 减去分页器高度
       dataSource={filteredTasks}
       rowSelection={{ type: 'checkbox', ...rowSelection }}
       pagination={{

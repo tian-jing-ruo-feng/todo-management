@@ -373,8 +373,8 @@ export default function ConfigPage() {
   }
 
   return (
-    <div className="flex flex-col gap-4 p-4 size-full">
-      <Card>
+    <div className="flex flex-col flex-1 gap-4 size-full overflow-hidden">
+      <Card classNames={{ body: 'p-3!' }}>
         <div className="flex justify-between items-center">
           <ConfigTabs activeKey={activeKey} onChange={handleTabChange} />
           <div className="flex gap-2">
@@ -405,7 +405,12 @@ export default function ConfigPage() {
         </div>
       </Card>
 
-      <Card className="flex-1">
+      <Card
+        className="flex-1 size-full overflow-hidden"
+        classNames={{
+          body: 'size-full overflow-hidden p-3!',
+        }}
+      >
         {loading ? (
           <div className="flex justify-center items-center h-64">
             <Spin size="large" />
@@ -413,16 +418,18 @@ export default function ConfigPage() {
         ) : data.length === 0 ? (
           <Empty description="暂无配置数据" />
         ) : (
-          <ConfigList
-            data={data}
-            tagIcon={tagIcon}
-            currentPage={currentPage}
-            pageSize={pageSize}
-            onPageChange={handlePageChange}
-            onEdit={handleEdit}
-            onDelete={handleDelete}
-            onSortChange={handleSortChange}
-          />
+          <div className="flex-1 flex flex-col overflow-hidden size-full">
+            <ConfigList
+              data={data}
+              tagIcon={tagIcon}
+              currentPage={currentPage}
+              pageSize={pageSize}
+              onPageChange={handlePageChange}
+              onEdit={handleEdit}
+              onDelete={handleDelete}
+              onSortChange={handleSortChange}
+            />
+          </div>
         )}
       </Card>
 
