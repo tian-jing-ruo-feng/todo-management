@@ -31,7 +31,7 @@ const tabs = [
 
 export default function ConfigTabs({ activeKey, onChange }: ConfigTabsProps) {
   return (
-    <div className="mb-4 flex gap-2">
+    <div className="flex gap-2">
       {tabs.map((tab) => (
         <Button
           key={tab.key}

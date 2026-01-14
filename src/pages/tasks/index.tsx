@@ -136,7 +136,7 @@ export default function Tasks() {
       {selectTab?.key === 'config' && <ConfigPage />}
 
       {selectTab?.key === 'priority' && (
-        <div className="flex-1 size-full flex flex-col">
+        <div className="flex-1 size-full flex flex-col overflow-hidden">
           <TaskTable
             filteredTasks={filteredTasks}
             statusOptions={statusOptions}

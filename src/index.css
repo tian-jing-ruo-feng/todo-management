@@ -7,3 +7,31 @@ body,
   height: 100%;
   overflow: hidden;
 }
+
+/* 确保表格分页器始终在底部 */
+.ant-table-wrapper {
+  height: 100%;
+  overflow: hidden;
+}
+
+.ant-spin-nested-loading {
+  height: 100%;
+  overflow: hidden;
+}
+
+.ant-spin-container {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow: hidden;
+}
+
+.ant-table {
+  flex: 1;
+  overflow: auto;
+}
+
+.ant-table-container {
+  height: 100%;
+  overflow: hidden;
+}
