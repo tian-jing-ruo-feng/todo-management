@@ -13,7 +13,7 @@ import {
 } from '@ant-design/icons'
 import { Button, Form, Input, Select, Upload, message } from 'antd'
 import dayjs from 'dayjs'
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import type { Task } from '../types/Task'
 import { downloadFile } from '../utils/common'
 import { getAllTasks, getTaskById, saveTask } from '../utils/db'
@@ -49,49 +49,55 @@ export default function TaskFilterForm({
   const [uploading, setUploading] = useState(false)
 
   // 加载状态数据
-  useEffect(() => {
-    const loadStatusData = async () => {
-      try {
-        const statuses = await statusRepository.getAll()
-        setStatusList(statuses)
-      } catch (error) {
-        console.error('加载状态数据失败:', error)
-      }
+  const loadStatusData = async () => {
+    try {
+      const statuses = await statusRepository.getAll()
+      setStatusList(statuses)
+    } catch (error) {
+      console.error('加载状态数据失败:', error)
     }
-    loadStatusData()
-  }, [])
+  }
 
   // 加载优先级数据
-  useEffect(() => {
-    const loadPriorityData = async () => {
-      try {
-        const priorities = await priorityRepository.getAll()
-        setPriorityList(priorities)
-      } catch (error) {
-        console.error('加载优先级数据失败:', error)
-      }
+  const loadPriorityData = async () => {
+    try {
+      const priorities = await priorityRepository.getAll()
+      setPriorityList(priorities)
+    } catch (error) {
+      console.error('加载优先级数据失败:', error)
     }
-    loadPriorityData()
-  }, [])
+  }
 
   // 加载分组数据
-  useEffect(() => {
-    const loadGroupData = async () => {
-      try {
-        const groups = await groupRepository.getAll()
-        setGroupList(groups)
-      } catch (error) {
-        console.error('加载分组数据失败:', error)
-      }
+  const loadGroupData = async () => {
+    try {
+      const groups = await groupRepository.getAll()
+      setGroupList(groups)
+    } catch (error) {
+      console.error('加载分组数据失败:', error)
     }
-    loadGroupData()
-  }, [])
-
+  }
   // 处理过滤变化
-  const handleValuesChange = () => {
+  const handleValuesChange = useCallback(() => {
     const values = form.getFieldsValue()
     onFilterChange(values)
-  }
+  }, [form, onFilterChange])
+
+  const loadFilterOptions = useCallback(async () => {
+    try {
+      // 预加载过滤选项数据
+      await Promise.all([loadStatusData(), loadPriorityData(), loadGroupData()])
+      handleValuesChange()
+    } catch (error) {
+      console.error('预加载过滤选项数据失败:', error)
+    }
+  }, [handleValuesChange])
+
+  useEffect(() => {
+    if (visible) {
+      loadFilterOptions()
+    }
+  }, [visible, loadFilterOptions])
 
   // 重置过滤
   const handleReset = () => {
