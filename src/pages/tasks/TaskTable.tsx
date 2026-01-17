@@ -56,6 +56,11 @@ export default function TaskTable({
     })
   }
 
+  const statusColor = (status: string) => {
+    const statusObj = statusOptions.find((s) => s.id === status)
+    return statusObj ? statusObj.color : ''
+  }
+
   const rowSelection: TableProps<Task>['rowSelection'] = {
     onChange: (selectedRowKeys, selectedRows) => {
       console.log(
@@ -76,6 +81,11 @@ export default function TaskTable({
       dataIndex: 'id',
       key: 'id',
       width: 65,
+      onCell: (record) => ({
+        style: {
+          borderLeft: `4px solid ${statusColor(record.status)}`,
+        },
+      }),
       render: (text: string, record: Task, index: number) => index + 1,
     },
     {
@@ -84,6 +94,11 @@ export default function TaskTable({
       key: 'name',
       ellipsis: true,
       minWidth: 200,
+      // onCell: (record) => ({
+      //   style: {
+      //     borderTop: `4px solid ${statusColor(record.status)}`,
+      //   },
+      // }),
       render: (text: string, record: Task) => (
         <>
           <div className="flex flex-col gap-y-3">
@@ -96,7 +111,7 @@ export default function TaskTable({
                 )}
               </ul>
             )}
-            <div className="bg-[#1668dc] text-white p-2 ">{text || ''}</div>
+            <p>{text || ''}</p>
           </div>
         </>
       ),
