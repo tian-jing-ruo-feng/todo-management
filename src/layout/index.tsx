@@ -1,6 +1,10 @@
 import { Layout } from 'antd'
 import Tasks from '../pages/tasks'
-const { Header, Footer, Content } = Layout
+const {
+  Header,
+  // Footer,
+  Content,
+} = Layout
 
 export default function PageLayout() {
   return (
@@ -9,7 +13,7 @@ export default function PageLayout() {
       <Content className="flex-1 overflow-y-auto">
         <Tasks />
       </Content>
-      <Footer className="text-center bg-black!">Footer</Footer>
+      {/* <Footer className="text-center bg-black!">Footer</Footer> */}
     </Layout>
   )
 }
