@@ -5,21 +5,21 @@ import type { Priority } from '../../types/Priority'
 import type { Status } from '../../types/Status'
 
 interface TaskTableProps {
-  statusOptions: Status[]
-  priorityOptions: Priority[]
-  groupOptions: Group[]
+  statusList: Status[]
+  priorityList: Priority[]
+  groupList: Group[]
   filteredTasks: Task[]
 }
 
 export default function TaskTable({
-  statusOptions,
-  priorityOptions,
-  groupOptions,
+  statusList,
+  priorityList,
+  groupList,
   filteredTasks,
 }: TaskTableProps) {
   const groupTags = (groups: string[]) => {
     return groups.map((groupId) => {
-      const group = groupOptions.find((g) => g.id === groupId)
+      const group = groupList.find((g) => g.id === groupId)
       return group ? (
         <Tag key={groupId} color={group.color}>
           {group.name}
@@ -32,7 +32,7 @@ export default function TaskTable({
 
   const statusTags = (statusIds: string[]) => {
     return statusIds.map((statusId) => {
-      const status = statusOptions.find((s) => s.id === statusId)
+      const status = statusList.find((s) => s.id === statusId)
       return status ? (
         <Tag key={statusId} color={status.color}>
           {status.name}
@@ -45,7 +45,7 @@ export default function TaskTable({
 
   const priorityTags = (priorityIds: string[]) => {
     return priorityIds.map((priorityId) => {
-      const priority = priorityOptions.find((p) => p.id === priorityId)
+      const priority = priorityList.find((p) => p.id === priorityId)
       return priority ? (
         <Tag key={priorityId} color={priority.color}>
           {priority.name}
@@ -57,7 +57,7 @@ export default function TaskTable({
   }
 
   const statusColor = (status: string) => {
-    const statusObj = statusOptions.find((s) => s.id === status)
+    const statusObj = statusList.find((s) => s.id === status)
     return statusObj ? statusObj.color : ''
   }
 

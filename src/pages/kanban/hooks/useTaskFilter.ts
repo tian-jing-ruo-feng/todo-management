@@ -1,7 +1,7 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useLiveQuery } from 'dexie-react-hooks'
+import { useCallback, useMemo, useState } from 'react'
 import type { TaskFilterValues } from '../../../components/TaskFilterForm'
 import type { Status } from '../../../types/Status'
-import type { Task } from '../../../types/Task'
 import { getAllTasks } from '../../../utils/db'
 
 export type TaskFilterProps = {
@@ -17,23 +17,20 @@ export const useTaskFilter = ({
   beforeCreateTask,
 }: TaskFilterProps) => {
   // 任务列表
-  const [tasks, setTasks] = useState<Task[]>([])
+  const tasks = useLiveQuery(async () => {
+    const tasks = await getAllTasks()
+    return tasks
+  })
   // 当前过滤条件
   const [filters, setFilters] = useState<TaskFilterValues>({})
 
-  useEffect(() => {
-    const getTasks = async () => {
-      const allTasks = await getAllTasks()
-      setTasks(allTasks)
-    }
-    getTasks()
-  }, [])
-
   // 使用 useMemo 派生过滤后的任务列表
   const filteredTasks = useMemo(() => {
+    if (!tasks) return []
+
     const { status, priority, group, keyword } = filters
 
-    let result = [...tasks]
+    let result = [...tasks!]
 
     if (status) {
       result = result.filter((task) => task.status === status)
@@ -71,15 +68,11 @@ export const useTaskFilter = ({
     [statusList, beforeCreateTask]
   )
 
-  const handleUploadSuccess = useCallback(async () => {
-    const allTasks = await getAllTasks()
-    setTasks(allTasks)
-  }, [])
+  const handleUploadSuccess = () => {}
 
   return {
     tasks,
     filteredTasks,
-    setTasks,
     handleFilterChange,
     handleResetFilter,
     handleAddTask,

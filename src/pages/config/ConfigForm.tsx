@@ -1,6 +1,6 @@
-import { Modal, Form, Input, ColorPicker } from 'antd'
 import type { ConfigFormData } from '@/types/config'
-import { useState, useEffect } from 'react'
+import { ColorPicker, Form, Input, Modal } from 'antd'
+import { useEffect, useState } from 'react'
 
 export interface ConfigFormProps {
   visible: boolean

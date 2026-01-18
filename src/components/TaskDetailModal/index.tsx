@@ -1,12 +1,11 @@
-import React from 'react'
 import type { Task } from '@/types/Task'
-import { Form, Input, Modal, Select, Switch } from 'antd'
-import { useState, useEffect } from 'react'
-import RichTextEditor from '../RichTextEditor'
-import DateTimePicker from '../DateTimePicker'
-import { statusRepository } from '@/utils/repositories/StatusRepository'
-import { priorityRepository } from '@/utils/repositories/PriorityRepository'
 import { groupRepository } from '@/utils/repositories/GroupRepository'
+import { priorityRepository } from '@/utils/repositories/PriorityRepository'
+import { statusRepository } from '@/utils/repositories/StatusRepository'
+import { Form, Input, Modal, Select, Switch } from 'antd'
+import { useEffect, useState } from 'react'
+import DateTimePicker from '../DateTimePicker'
+import RichTextEditor from '../RichTextEditor'
 
 interface TaskDetailModalProps {
   visible: boolean
@@ -54,7 +53,7 @@ export default function TaskDetailModal({
   }, [])
 
   // 当任务改变时，更新表单和内容
-  React.useEffect(() => {
+  useEffect(() => {
     if (task && visible) {
       // 只有在 Modal 可见且有任务时才设置表单值
       form.setFieldsValue({
@@ -69,14 +68,6 @@ export default function TaskDetailModal({
       setContent(task.content || '')
     }
   }, [task, form, visible])
-
-  // 当 Modal 关闭时重置表单
-  React.useEffect(() => {
-    if (!visible) {
-      form.resetFields()
-      setContent('')
-    }
-  }, [visible, form])
 
   const handleOk = async () => {
     try {
@@ -117,11 +108,7 @@ export default function TaskDetailModal({
       confirmLoading={loading}
       destroyOnHidden
     >
-      <Form
-        form={form}
-        layout="vertical"
-        // 移除 initialValues，让 useEffect 控制表单值
-      >
+      <Form form={form} layout="vertical">
         <Form.Item
           name="name"
           label="任务名称"

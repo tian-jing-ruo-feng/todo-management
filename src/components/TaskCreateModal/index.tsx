@@ -1,14 +1,9 @@
 import type { Task } from '@/types/Task'
 import { Form, Input, Modal, Select, Switch } from 'antd'
-import { useState, useEffect } from 'react'
-import RichTextEditor from '../RichTextEditor'
+import { useState } from 'react'
+import { useFilterOptions } from '../../pages/kanban/hooks/useFilterOptions'
 import DateTimePicker from '../DateTimePicker'
-import { statusRepository } from '@/utils/repositories/StatusRepository'
-import { priorityRepository } from '@/utils/repositories/PriorityRepository'
-import { groupRepository } from '@/utils/repositories/GroupRepository'
-import type { Status } from '@/types/Status'
-import type { Priority } from '@/types/Priority'
-import type { Group } from '@/types/Group'
+import RichTextEditor from '../RichTextEditor'
 
 interface TaskCreateModalProps {
   visible: boolean
@@ -23,31 +18,10 @@ export default function TaskCreateModal({
   onClose,
   onSave,
 }: TaskCreateModalProps) {
-  const [form] = Form.useForm()
+  const [form] = Form.useForm<Task>()
   const [content, setContent] = useState('')
   const [loading, setLoading] = useState(false)
-  const [statusOptions, setStatusOptions] = useState<Status[]>([])
-  const [priorityOptions, setPriorityOptions] = useState<Priority[]>([])
-  const [groupOptions, setGroupOptions] = useState<Group[]>([])
-
-  useEffect(() => {
-    const loadOptions = async () => {
-      try {
-        const [statuses, priorities, groups] = await Promise.all([
-          statusRepository.getAll(),
-          priorityRepository.getAll(),
-          groupRepository.getAll(),
-        ])
-        setStatusOptions(statuses)
-        setPriorityOptions(priorities)
-        setGroupOptions(groups)
-      } catch (error) {
-        console.error('加载配置数据失败:', error)
-      }
-    }
-
-    loadOptions()
-  }, [])
+  const { statusList, priorityList, groupList } = useFilterOptions()
 
   const handleOk = async () => {
     try {
@@ -117,7 +91,7 @@ export default function TaskCreateModal({
 
         <Form.Item name="status" label="状态">
           <Select placeholder="选择任务状态">
-            {statusOptions.map((status) => (
+            {statusList?.map((status) => (
               <Select.Option key={status.id} value={status.id}>
                 <span style={{ color: status.color }}>●</span> {status.name}
               </Select.Option>
@@ -127,7 +101,7 @@ export default function TaskCreateModal({
 
         <Form.Item name="priority" label="优先级">
           <Select placeholder="选择优先级">
-            {priorityOptions.map((priority) => (
+            {priorityList?.map((priority) => (
               <Select.Option key={priority.id} value={priority.id}>
                 <span style={{ color: priority.color }}>●</span> {priority.name}
               </Select.Option>
@@ -145,7 +119,7 @@ export default function TaskCreateModal({
 
         <Form.Item name="group" label="分组">
           <Select mode="multiple" placeholder="选择任务分组" allowClear>
-            {groupOptions.map((group) => (
+            {groupList?.map((group) => (
               <Select.Option key={group.id} value={group.id}>
                 <span style={{ color: group.color }}>●</span> {group.name}
               </Select.Option>
