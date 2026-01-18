@@ -3,6 +3,7 @@ import type { Priority } from '@/types/Priority'
 import type { Status } from '@/types/Status'
 import type { Table } from 'dexie'
 import Dexie from 'dexie'
+import DexieCloud from 'dexie-cloud-addon'
 
 /**
  * 任务接口定义
@@ -73,7 +74,9 @@ class TaskDatabase extends Dexie {
   groups!: Table<Group>
 
   constructor() {
-    super('TodoDB')
+    super('TodoDB', {
+      addons: [DexieCloud],
+    })
     // 定义数据库版本和存储结构
     // ++id 表示自增主键，但这里我们使用字符串ID
     // 后续字段表示创建索引
@@ -83,6 +86,12 @@ class TaskDatabase extends Dexie {
       statuses: 'id',
       priorities: 'id',
       groups: 'id',
+    })
+
+    this.cloud.configure({
+      databaseUrl: 'https://z2quxatc8.dexie.cloud',
+      requireAuth: true,
+      customLoginGui: true,
     })
   }
 }
