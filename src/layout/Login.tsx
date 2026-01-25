@@ -1,142 +1,146 @@
-import { Alert, Button, Form, Input, Modal } from 'antd'
-import { useObservable } from 'dexie-react-hooks'
-import { useCallback } from 'react'
+import { Button, Form, Input, Modal, message } from 'antd'
+import { useState } from 'react'
 import db from '../utils/db'
 
-// Dexie Cloud 字段配置接口
-interface DXCInputField {
-  type?: string
-  label?: string
-  placeholder?: string
-  onGetCode?: (value: string) => Promise<void>
-}
-
-// Dexie Cloud 告警配置接口
-interface DXCAlert {
-  type?: string
-  message: string
-  description?: string
-}
-
-// Dexie Cloud 用户交互接口
-interface DXCUserInteraction {
-  type: string
-  title: string
-  alerts?: DXCAlert[]
-  fields?: Record<string, DXCInputField>
-  submitLabel?: string
-  cancelLabel?: string
-  onSubmit: (params: Record<string, string>) => void
-  onCancel?: () => void
+type FieldType = {
+  email?: string
+  otp?: string
 }
 
 /**
  * 自定义登录弹窗组件
  * 使用 Ant Design 的 Modal 和 Form 组件
  */
-export function MyLoginGUI() {
+export function MyLoginGUI(props: {
+  isLogin: boolean
+  onLoginSuccess: () => void
+  onClose: () => void
+}) {
+  const { isLogin = false, onLoginSuccess, onClose } = props
   const [form] = Form.useForm()
-  const ui = useObservable(db.cloud.userInteraction) as
-    | DXCUserInteraction
-    | undefined
+  const [emailValid, setEmailValid] = useState(false)
+  // 验证码发送结果
+  const [isSending, setIsSending] = useState(false)
+  const [isLogining, setIsLogining] = useState(false)
+  const [emailSendResult, setEmailSendResult] = useState<{
+    otp_id: number
+    type: string
+  }>({
+    otp_id: 0,
+    type: '',
+  })
 
-  // 提交表单
-  const handleSubmit = useCallback(async () => {
-    try {
-      const values = await form.validateFields()
-      ui?.onSubmit?.(values)
-      form.resetFields()
-    } catch (error) {
-      console.error('表单验证失败:', error)
-    }
-  }, [form, ui])
-
-  // 取消操作
-  const handleCancel = useCallback(() => {
-    form.resetFields()
-    ui?.onCancel?.()
-  }, [form, ui])
-
-  // 判断字段类型
-  const isPasswordField = (fieldName: string) => {
-    return fieldName.toLowerCase().includes('password')
+  const handleSendEmail = async () => {
+    const url = db.cloud.options?.databaseUrl
+    setIsSending(true)
+    fetch(`${url}/token`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        email: form.getFieldValue('email'),
+        grant_type: 'otp',
+        scopes: ['ACCESS_DB'],
+      }),
+    })
+      .then((res) => {
+        res.json().then((data) => {
+          if (data.otp_id) {
+            setEmailSendResult(data)
+            message.success('验证码已发送, 请查收邮箱')
+          } else {
+            message.error('验证码获取失败')
+          }
+        })
+      })
+      .finally(() => {
+        setIsSending(false)
+      })
   }
 
-  if (!ui) return null // 无用户交互请求时不渲染
+  const handleSubmit = async () => {
+    await form.validateFields()
+    setIsLogining(true)
+    db.cloud
+      .login({
+        email: form.getFieldValue('email'),
+        otp: form.getFieldValue('otp'),
+        otpId: emailSendResult.otp_id.toString(),
+        grant_type: 'otp',
+      })
+      .then(() => {
+        message.success('登录成功')
+        onLoginSuccess()
+        setTimeout(() => {
+          window.location.reload()
+        }, 300)
+      })
+      .finally(() => {
+        setIsLogining(false)
+      })
+  }
+
+  const handelOnClose = () => {
+    setIsSending(false)
+    setIsLogining(false)
+    form.resetFields()
+    onClose()
+  }
 
   return (
     <Modal
-      title={ui.title || '登录'}
-      open={true}
-      onCancel={handleCancel}
+      title={'登录'}
+      open={isLogin}
       footer={null}
       centered
       width={500}
+      onCancel={handelOnClose}
     >
       <Form form={form} layout="vertical" onFinish={handleSubmit}>
-        {/* 渲染告警信息 */}
-        {ui.alerts &&
-          ui.alerts.length > 0 &&
-          ui.alerts.map((alert, index) => (
-            <Alert
-              key={index}
-              type={
-                alert.type === 'error'
-                  ? 'error'
-                  : alert.type === 'warning'
-                    ? 'warning'
-                    : alert.type === 'success'
-                      ? 'success'
-                      : 'info'
-              }
-              description={alert.description}
-              showIcon
-              closable
-              style={{ marginBottom: 16 }}
+        <Form.Item<FieldType>
+          label="邮箱"
+          name="email"
+          validateFirst
+          rules={[
+            { required: true, message: '请输入邮箱' },
+            {
+              type: 'email',
+              message: '请输入有效的邮箱地址',
+            },
+          ]}
+        >
+          <div className="flex items-center justify-between gap-2">
+            <Input
+              placeholder="请输入邮箱"
+              onChange={(e) => {
+                const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+                setEmailValid(emailRegex.test(e.target.value))
+              }}
             />
-          ))}
-
-        {/* 动态渲染表单字段 */}
-        {ui.fields &&
-          Object.entries(ui.fields).map(([fieldName, fieldConfig], index) => (
-            <Form.Item
-              key={fieldName}
-              name={fieldName}
-              label={fieldConfig.label}
-              rules={[
-                {
-                  required: true,
-                  message: `请输入${fieldConfig.label || fieldName}`,
-                },
-              ]}
+            <Button
+              type="primary"
+              onClick={handleSendEmail}
+              disabled={!emailValid}
+              loading={isSending}
             >
-              {isPasswordField(fieldName) ? (
-                <Input.Password
-                  placeholder={fieldConfig.placeholder}
-                  autoFocus={index === 0}
-                />
-              ) : (
-                <Input
-                  placeholder={fieldConfig.placeholder}
-                  type={fieldConfig.type || 'text'}
-                  autoFocus={index === 0}
-                />
-              )}
-            </Form.Item>
-          ))}
-
-        {/* 按钮区域 */}
-        <Form.Item style={{ marginBottom: 0, marginTop: 24 }}>
-          <div
-            style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px' }}
-          >
-            {ui.cancelLabel && (
-              <Button onClick={handleCancel}>{ui.cancelLabel}</Button>
-            )}
-            <Button type="primary" htmlType="submit">
-              {ui.submitLabel || '提交'}
+              发送验证码
             </Button>
           </div>
+        </Form.Item>
+
+        <Form.Item<FieldType>
+          label="验证码"
+          name="otp"
+          rules={[{ required: true, message: '请输入验证码' }]}
+        >
+          <Input placeholder="请输入验证码" />
+        </Form.Item>
+
+        <Form.Item label={null}>
+          <Button type="primary" htmlType="submit" loading={isLogining}>
+            登录
+          </Button>
         </Form.Item>
       </Form>
     </Modal>

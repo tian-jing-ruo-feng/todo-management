@@ -92,6 +92,8 @@ class TaskDatabase extends Dexie {
       databaseUrl: 'https://z2quxatc8.dexie.cloud',
       requireAuth: true,
       customLoginGui: true,
+      // When set, local changes will not trigger a sync towards the server.
+      disableEagerSync: true,
     })
   }
 }

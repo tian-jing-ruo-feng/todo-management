@@ -2,16 +2,17 @@ import { Button, message } from 'antd'
 import { useObservable } from 'dexie-react-hooks'
 import db from '../utils/db'
 
-export default function UserInfo() {
-  const [messageApi, contextHolder] = message.useMessage()
+export default function UserInfo(props: { login: () => void }) {
+  const { login } = props
   const user = useObservable(db.cloud.currentUser)
   async function handleUserLogin() {
     if (user?.isLoggedIn) {
-      await db.cloud.logout()
-      messageApi.success('退出成功')
+      db.cloud.logout().then(() => {
+        message.success('退出成功')
+        location.reload()
+      })
     } else {
-      db.cloud.login()
-      messageApi.success('登录成功')
+      login()
     }
   }
 
@@ -26,7 +27,6 @@ export default function UserInfo() {
           </h2>
         )}
         <>
-          {contextHolder}
           <Button type="primary" onClick={handleUserLogin}>
             {user?.isLoggedIn ? '退出' : '登录'}
           </Button>
