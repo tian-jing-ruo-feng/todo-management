@@ -94,6 +94,7 @@ export function MyLoginGUI(props: {
       open={isLogin}
       footer={null}
       centered
+      keyboard={false}
       width={500}
       onCancel={handelOnClose}
     >
