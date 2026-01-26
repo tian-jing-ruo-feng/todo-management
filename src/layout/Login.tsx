@@ -61,6 +61,10 @@ export function MyLoginGUI(props: {
 
   const handleSubmit = async () => {
     await form.validateFields()
+    if (!emailSendResult.otp_id) {
+      message.error('请先发送验证码')
+      return
+    }
     setIsLogining(true)
     db.cloud
       .login({

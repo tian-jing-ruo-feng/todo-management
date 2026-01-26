@@ -7,7 +7,7 @@ export default function UserInfo(props: { login: () => void }) {
   const user = useObservable(db.cloud.currentUser)
   async function handleUserLogin() {
     if (user?.isLoggedIn) {
-      db.cloud.logout().then(() => {
+      db.cloud.logout({ force: true }).then(() => {
         message.success('退出成功')
         location.reload()
       })
