@@ -194,16 +194,10 @@ export default function KanbanItem({
       >
         {task.content && (
           <div className="text-gray-600 text-xs mb-2">
-            {/* {isHTMLContent(task.content) ? (
-              <div
-                className="whitespace-pre-wrap"
-                dangerouslySetInnerHTML={{ __html: sanitizeHTML(task.content) }}
-              />
-            ) : ( */}
-            <p className="line-clamp-2 leading-relaxed whitespace-pre-wrap">
-              {task.content}
-            </p>
-            {/* )} */}
+            <div
+              className="whitespace-pre-wrap"
+              dangerouslySetInnerHTML={{ __html: task.content }}
+            />
           </div>
         )}
         <div className="flex justify-between items-center text-xs mt-2">
