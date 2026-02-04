@@ -83,23 +83,6 @@ export default function KanbanItem({
     return groupList.find((group) => group.id === groupId)
   }
 
-  // 安全的HTML内容清理，移除危险标签和属性
-  const sanitizeHTML = (html: string): string => {
-    // 移除script标签、on事件属性、javascript:协议等危险内容
-    return html
-      .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '')
-      .replace(/on\w+="[^"]*"/gi, '')
-      .replace(/on\w+='[^']*'/gi, '')
-      .replace(/javascript:/gi, '')
-      .replace(/vbscript:/gi, '')
-      .replace(/data:/gi, '')
-  }
-
-  // 检查内容是否包含HTML标签
-  const isHTMLContent = (content: string): boolean => {
-    return /<[^>]+>/.test(content)
-  }
-
   // 使用 dayjs 格式化时间显示（带记忆化优化）
   const formatTime = useCallback((dateString?: string): string => {
     if (!dateString) return ''
@@ -211,13 +194,16 @@ export default function KanbanItem({
       >
         {task.content && (
           <div className="text-gray-600 text-xs mb-2">
-            {isHTMLContent(task.content) ? (
+            {/* {isHTMLContent(task.content) ? (
               <div
+                className="whitespace-pre-wrap"
                 dangerouslySetInnerHTML={{ __html: sanitizeHTML(task.content) }}
               />
-            ) : (
-              <p className="line-clamp-2 leading-relaxed">{task.content}</p>
-            )}
+            ) : ( */}
+            <p className="line-clamp-2 leading-relaxed whitespace-pre-wrap">
+              {task.content}
+            </p>
+            {/* )} */}
           </div>
         )}
         <div className="flex justify-between items-center text-xs mt-2">
