@@ -16,3 +16,5 @@ dist/
 !.vscode/extensions.json
 .idea
 .codebuddy
+dexie-cloud.json
+dexie-cloud.key
