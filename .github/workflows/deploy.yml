@@ -41,6 +41,32 @@ jobs:
       - name: Install dependencies
         run: pnpm install
 
+      # ========== 验证 Secrets 是否设置（安全方式）==========
+      - name: Verify Secrets are set
+        run: |
+          echo "Checking if VITE_DATABASE_URL is set..."
+          if [ -n "$VITE_DATABASE_URL" ]; then
+            echo "✓ VITE_DATABASE_URL is set (value hidden for security)"
+            echo "  Length: ${#VITE_DATABASE_URL} characters"
+            echo "  First 10 chars: ${VITE_DATABASE_URL:0:10}..."
+          else
+            echo "✗ VITE_DATABASE_URL is NOT set!"
+            exit 1
+          fi
+
+          echo ""
+          echo "Checking if VITE_ENCRYPTION_KEY is set..."
+          if [ -n "$VITE_ENCRYPTION_KEY" ]; then
+            echo "✓ VITE_ENCRYPTION_KEY is set (value hidden for security)"
+            echo "  Length: ${#VITE_ENCRYPTION_KEY} characters"
+          else
+            echo "✗ VITE_ENCRYPTION_KEY is NOT set!"
+            exit 1
+          fi
+        env:
+          VITE_DATABASE_URL: ${{ secrets.VITE_DATABASE_URL }}
+          VITE_ENCRYPTION_KEY: ${{ secrets.VITE_ENCRYPTION_KEY }}
+
       - name: Build
         run: pnpm run build
         env:
