@@ -4,6 +4,15 @@ import type { Status } from '@/types/Status'
 import type { Table } from 'dexie'
 import Dexie from 'dexie'
 import DexieCloud from 'dexie-cloud-addon'
+import {
+  decryptTaskFields,
+  decryptTasks,
+  encryptTaskFields,
+  encryptTasks,
+} from './crypto'
+
+// 从环境变量获取加密密钥
+const ENCRYPTION_KEY = import.meta.env.VITE_ENCRYPTION_KEY || ''
 
 /**
  * 任务接口定义
@@ -89,7 +98,7 @@ class TaskDatabase extends Dexie {
     })
 
     this.cloud.configure({
-      databaseUrl: 'https://z2quxatc8.dexie.cloud',
+      databaseUrl: import.meta.env.VITE_DATABASE_URL,
       requireAuth: true,
       customLoginGui: true,
       // When set, local changes will not trigger a sync towards the server.
@@ -109,18 +118,22 @@ const db = new TaskDatabase()
  * @returns Promise<string> 返回任务ID
  */
 export const saveTask = async (task: Task): Promise<string> => {
-  const taskData = {
-    ...task,
-    // updateTime: new Date().toISOString(),
-  }
-
   // 如果任务存在id，则更新；否则添加
   if (task.id && (await db.tasks.get(task.id))) {
-    await db.tasks.update(task.id, taskData)
+    // 更新时加密敏感字段
+    const updateData = ENCRYPTION_KEY
+      ? encryptTaskFields(task, ENCRYPTION_KEY)
+      : task
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    await db.tasks.update(task.id, updateData as any)
     return task.id
   } else {
-    await db.tasks.add(taskData)
-    return taskData.id
+    // 添加时加密敏感字段
+    const newTaskData = ENCRYPTION_KEY
+      ? encryptTaskFields(task, ENCRYPTION_KEY)
+      : task
+    await db.tasks.add(newTaskData)
+    return newTaskData.id
   }
 }
 
@@ -144,7 +157,11 @@ export const deleteTask = async (taskId: string): Promise<void> => {
  */
 export const getAllTasks = async (): Promise<Task[]> => {
   const tasks = await db.tasks.toArray()
-  return tasks.filter((task) => !task.isRemoved)
+  const activeTasks = tasks.filter((task) => !task.isRemoved)
+  // 解密敏感字段
+  return ENCRYPTION_KEY
+    ? decryptTasks(activeTasks, ENCRYPTION_KEY)
+    : activeTasks
 }
 
 /**
@@ -154,7 +171,11 @@ export const getAllTasks = async (): Promise<Task[]> => {
  */
 export const getTasksByStatus = async (status: string): Promise<Task[]> => {
   const tasks = await db.tasks.where('status').equals(status).toArray()
-  return tasks.filter((task) => !task.isRemoved)
+  const activeTasks = tasks.filter((task) => !task.isRemoved)
+  // 解密敏感字段
+  return ENCRYPTION_KEY
+    ? decryptTasks(activeTasks, ENCRYPTION_KEY)
+    : activeTasks
 }
 
 /**
@@ -162,7 +183,11 @@ export const getTasksByStatus = async (status: string): Promise<Task[]> => {
  * @param tasks 任务数组
  */
 export const bulkAddTasks = async (tasks: Task[]): Promise<void> => {
-  await db.tasks.bulkAdd(tasks)
+  // 加密敏感字段
+  const encryptedTasks = ENCRYPTION_KEY
+    ? encryptTasks(tasks, ENCRYPTION_KEY)
+    : tasks
+  await db.tasks.bulkAdd(encryptedTasks)
 }
 
 /**
@@ -180,7 +205,9 @@ export const clearAllTasks = async (): Promise<void> => {
 export const getTaskById = async (
   taskId: string
 ): Promise<Task | undefined> => {
-  return await db.tasks.get(taskId)
+  const task = await db.tasks.get(taskId)
+  // 解密敏感字段
+  return task && ENCRYPTION_KEY ? decryptTaskFields(task, ENCRYPTION_KEY) : task
 }
 
 /**
@@ -188,7 +215,11 @@ export const getTaskById = async (
  * @param tasks 任务数组
  */
 export const bulkUpdateTasks = async (tasks: Task[]): Promise<void> => {
-  await db.tasks.bulkPut(tasks)
+  // 加密敏感字段
+  const encryptedTasks = ENCRYPTION_KEY
+    ? encryptTasks(tasks, ENCRYPTION_KEY)
+    : tasks
+  await db.tasks.bulkPut(encryptedTasks)
 }
 
 /**
@@ -206,7 +237,11 @@ export const initDatabaseWithSampleData = async (
 ): Promise<void> => {
   const existingTasks = await db.tasks.toArray()
   if (existingTasks.length === 0) {
-    await db.tasks.bulkAdd(sampleTasks)
+    // 加密示例数据
+    const encryptedTasks = ENCRYPTION_KEY
+      ? encryptTasks(sampleTasks, ENCRYPTION_KEY)
+      : sampleTasks
+    await db.tasks.bulkAdd(encryptedTasks)
     console.log('数据库初始化完成，已添加示例数据')
   }
 }

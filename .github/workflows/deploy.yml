@@ -43,6 +43,9 @@ jobs:
 
       - name: Build
         run: pnpm run build
+        env:
+          VITE_DATABASE_URL: ${{ secrets.VITE_DATABASE_URL }}
+          VITE_ENCRYPTION_KEY: ${{ secrets.VITE_ENCRYPTION_KEY }}
 
       - name: Setup Pages
         uses: actions/configure-pages@v4
