@@ -90,12 +90,13 @@ export function MyLoginGUI(props: {
 
   return (
     <Modal
+      centered
+      width={500}
       title={'登录'}
       open={isLogin}
       footer={null}
-      centered
       keyboard={false}
-      width={500}
+      maskClosable={false}
       onCancel={handelOnClose}
     >
       <Form form={form} layout="vertical" onFinish={handleSubmit}>
