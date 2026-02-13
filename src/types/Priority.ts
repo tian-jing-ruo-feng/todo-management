@@ -1,4 +1,6 @@
-export interface Priority {
+import type { Base } from './base'
+
+export interface Priority extends Base {
   /**
    * 优先级别标识
    */
