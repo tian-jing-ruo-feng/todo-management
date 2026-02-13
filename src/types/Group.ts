@@ -1,4 +1,6 @@
-export interface Group {
+import type { Base } from './base'
+
+export interface Group extends Base {
   /**
    * 分组别标识
    */

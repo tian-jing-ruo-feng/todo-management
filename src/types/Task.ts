@@ -1,8 +1,9 @@
 import type { Group } from './Group'
 import type { Priority } from './Priority'
 import type { Status } from './Status'
+import type { Base } from './base'
 
-export interface Task {
+export interface Task extends Base {
   /**
    * 任务名称
    */

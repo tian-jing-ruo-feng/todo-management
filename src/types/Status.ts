@@ -1,4 +1,6 @@
-export interface Status {
+import type { Base } from './base'
+
+export interface Status extends Base {
   /**
    * 状态别标识
    */
