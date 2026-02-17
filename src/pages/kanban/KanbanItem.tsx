@@ -2,14 +2,20 @@ import type { Group } from '@/types/Group'
 import type { Priority } from '@/types/Priority'
 import type { Task } from '@/types/Task'
 import { groupRepository, priorityRepository } from '@/utils/repositories'
-import { BookOutlined, DeleteOutlined, FlagOutlined } from '@ant-design/icons'
+import {
+  BookOutlined,
+  DeleteOutlined,
+  FlagOutlined,
+  UserOutlined,
+} from '@ant-design/icons'
 import { useSortable } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
-import { Button, Card, Tag } from 'antd'
+import { Avatar, Button, Card, Tag, Tooltip } from 'antd'
 import dayjs from 'dayjs'
 import 'dayjs/locale/zh-cn'
 import relativeTime from 'dayjs/plugin/relativeTime'
 import { useCallback, useEffect, useState } from 'react'
+import db from '@/utils/db'
 
 // 配置 dayjs
 dayjs.extend(relativeTime)
@@ -40,6 +46,7 @@ export default function KanbanItem({
     null
   )
   const [groupList, setGroupList] = useState<Group[]>([])
+  const [assigneeName, setAssigneeName] = useState<string>('')
 
   // 如果是拖拽浮层中的组件，不需要使用dnd-kit的样式
   const style = isOverlayDragging
@@ -78,6 +85,35 @@ export default function KanbanItem({
     }
     fetchGroup()
   }, [])
+
+  useEffect(() => {
+    const fetchAssignee = async () => {
+      if (!task.assignee) {
+        setAssigneeName('')
+        return
+      }
+
+      try {
+        // 查找成员信息
+        const member = await db.members
+          .where('userId')
+          .equals(task.assignee)
+          .first()
+
+        if (member) {
+          setAssigneeName(member.name || member.email || '未命名')
+        } else {
+          // 可能是项目所有者
+          setAssigneeName('项目所有者')
+        }
+      } catch (error) {
+        console.error('获取负责人信息失败:', error)
+        setAssigneeName('')
+      }
+    }
+
+    fetchAssignee()
+  }, [task.assignee])
 
   const getGroupById = (groupId: string) => {
     return groupList.find((group) => group.id === groupId)
@@ -212,6 +248,18 @@ export default function KanbanItem({
               <span className="text-orange-500 font-semibold bg-orange-50 px-2 py-1 rounded">
                 置顶
               </span>
+            )}
+            {assigneeName && (
+              <Tooltip title={`负责人: ${assigneeName}`}>
+                <div className="flex items-center gap-1 px-2 py-0.5 bg-blue-50 rounded-full">
+                  <Avatar
+                    size={16}
+                    icon={<UserOutlined />}
+                    className="bg-blue-400"
+                  />
+                  <span className="text-blue-600">{assigneeName}</span>
+                </div>
+              </Tooltip>
             )}
           </div>
           <div className="flex items-center gap-1 text-gray-400">

@@ -5,6 +5,7 @@ import { statusRepository } from '@/utils/repositories/StatusRepository'
 import { Form, Input, Modal, Select, Switch } from 'antd'
 import { useEffect, useState } from 'react'
 import DateTimePicker from '../DateTimePicker'
+import MemberSelector from '../MemberSelector'
 import RichTextEditor from '../RichTextEditor'
 
 interface TaskDetailModalProps {
@@ -37,9 +38,9 @@ export default function TaskDetailModal({
     const loadOptions = async () => {
       try {
         const [statuses, priorities, groups] = await Promise.all([
-          statusRepository.getAll(),
-          priorityRepository.getAll(),
-          groupRepository.getAll(),
+          statusRepository.getAll(task?.projectId),
+          priorityRepository.getAll(task?.projectId),
+          groupRepository.getAll(task?.projectId),
         ])
         setStatusOptions(statuses)
         setPriorityOptions(priorities)
@@ -49,8 +50,10 @@ export default function TaskDetailModal({
       }
     }
 
-    loadOptions()
-  }, [])
+    if (task?.projectId) {
+      loadOptions()
+    }
+  }, [task?.projectId])
 
   // 当任务改变时，更新表单和内容
   useEffect(() => {
@@ -64,6 +67,7 @@ export default function TaskDetailModal({
         isTop: task.isTop,
         expectStartTime: task.expectStartTime,
         expectEndTime: task.expectEndTime,
+        assignee: task.assignee,
       })
       setContent(task.content || '')
     }
@@ -153,6 +157,10 @@ export default function TaskDetailModal({
               </Select.Option>
             ))}
           </Select>
+        </Form.Item>
+
+        <Form.Item name="assignee" label="负责人">
+          <MemberSelector projectId={task?.projectId} />
         </Form.Item>
 
         <Form.Item name="isTop" label="是否置顶" valuePropName="checked">

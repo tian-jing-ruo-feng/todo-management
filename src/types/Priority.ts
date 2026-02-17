@@ -17,4 +17,8 @@ export interface Priority extends Base {
    * 排序
    */
   sort: number
+  /**
+   * 所属项目ID
+   */
+  projectId: string
 }

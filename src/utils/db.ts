@@ -1,116 +1,19 @@
-import type { Group } from '@/types/Group'
-import type { Priority } from '@/types/Priority'
-import type { Status } from '@/types/Status'
-import type { Table } from 'dexie'
-import Dexie from 'dexie'
-import DexieCloud from 'dexie-cloud-addon'
+// 重新导出新的数据库实例
+export { default, ToDoDb } from '@/db/db'
+
+// 保留原有的工具函数
+import type { Task } from '@/types/Task'
+import db from '@/db/db'
+
+// 从环境变量获取加密密钥
+const ENCRYPTION_KEY = import.meta.env.VITE_ENCRYPTION_KEY || ''
+
 import {
   decryptTaskFields,
   decryptTasks,
   encryptTaskFields,
   encryptTasks,
 } from './crypto'
-
-// 从环境变量获取加密密钥
-const ENCRYPTION_KEY = import.meta.env.VITE_ENCRYPTION_KEY || ''
-
-/**
- * 任务接口定义
- * 用于 IndexedDB 数据库存储
- */
-export interface Task {
-  /**
-   * 任务ID
-   */
-  id: string
-  /**
-   * 任务名称
-   */
-  name: string
-  /**
-   * 任务内容
-   */
-  content?: string
-  /**
-   * 任务状态
-   */
-  status: string
-  /**
-   * 是否移除（软删除）
-   */
-  isRemoved?: boolean
-  /**
-   * 分组
-   */
-  group?: string[]
-  /**
-   * 创建时间
-   */
-  createTime?: string
-  /**
-   * 更新时间
-   */
-  updateTime?: string
-  /**
-   * 期望开始时间
-   */
-  expectStartTime?: string
-  /**
-   * 期望结束时间
-   */
-  expectEndTime?: string
-  /**
-   * 优先级
-   */
-  priority: string
-  /**
-   * 是否置顶
-   */
-  isTop?: boolean
-  /**
-   * 排序
-   */
-  sort?: number
-}
-
-/**
- * 任务数据库类，继承 Dexie
- */
-class TaskDatabase extends Dexie {
-  tasks!: Table<Task>
-  statuses!: Table<Status>
-  priorities!: Table<Priority>
-  groups!: Table<Group>
-
-  constructor() {
-    super('TodoDB', {
-      addons: [DexieCloud],
-    })
-    // 定义数据库版本和存储结构
-    // ++id 表示自增主键，但这里我们使用字符串ID
-    // 后续字段表示创建索引
-    this.version(1).stores({
-      tasks:
-        'id, status, priority, createTime, updateTime, isTop, isRemoved, sort',
-      statuses: 'id',
-      priorities: 'id',
-      groups: 'id',
-    })
-
-    this.cloud.configure({
-      databaseUrl: import.meta.env.VITE_DATABASE_URL,
-      requireAuth: true,
-      customLoginGui: true,
-      // When set, local changes will not trigger a sync towards the server.
-      disableEagerSync: true,
-    })
-  }
-}
-
-/**
- * 创建数据库实例
- */
-const db = new TaskDatabase()
 
 /**
  * 添加或更新任务
@@ -245,5 +148,3 @@ export const initDatabaseWithSampleData = async (
     console.log('数据库初始化完成，已添加示例数据')
   }
 }
-
-export default db

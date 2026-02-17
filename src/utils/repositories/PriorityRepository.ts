@@ -8,10 +8,13 @@ import db from '../db'
 export class PriorityRepository {
   /**
    * 获取所有优先级
+   * @param projectId 项目ID（可选）
    * @returns Promise<Priority[]> 优先级列表
    */
-  async getAll(): Promise<Priority[]> {
-    const priorities = await db.priorities.toArray()
+  async getAll(projectId?: string): Promise<Priority[]> {
+    const priorities = projectId
+      ? await db.priorities.where('projectId').equals(projectId).toArray()
+      : await db.priorities.toArray()
     return priorities.sort((a, b) => a.sort - b.sort)
   }
 
@@ -19,13 +22,19 @@ export class PriorityRepository {
    * 分页获取数据
    * @param page 页码
    * @param pageSize 每页大小
+   * @param projectId 项目ID（可选）
    * @returns Promise<Priority[]> 分页优先级列表
    */
   async getPaginated(
     page: number = 1,
-    pageSize: number = 10
+    pageSize: number = 10,
+    projectId?: string
   ): Promise<Priority[]> {
-    const priorities = await db.priorities
+    const query = projectId
+      ? db.priorities.where('projectId').equals(projectId)
+      : db.priorities
+
+    const priorities = await query
       .offset((page - 1) * pageSize)
       .limit(pageSize)
       .toArray()

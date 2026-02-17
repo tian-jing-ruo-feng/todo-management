@@ -17,6 +17,10 @@ export interface Task extends Base {
    */
   id: string
   /**
+   * 所属项目ID
+   */
+  projectId: string
+  /**
    * 任务状态
    */
   status: Status['id']
@@ -56,4 +60,8 @@ export interface Task extends Base {
    * 排序属性
    */
   sort?: number // 排序属性
+  /**
+   * 负责人ID
+   */
+  assignee?: string
 }

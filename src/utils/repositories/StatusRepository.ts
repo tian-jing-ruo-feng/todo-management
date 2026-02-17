@@ -8,10 +8,13 @@ import db from '../db'
 export class StatusRepository {
   /**
    * 获取所有状态
+   * @param projectId 项目ID（可选）
    * @returns Promise<Status[]> 状态列表
    */
-  async getAll(): Promise<Status[]> {
-    const statuses = await db.statuses.toArray()
+  async getAll(projectId?: string): Promise<Status[]> {
+    const statuses = projectId
+      ? await db.statuses.where('projectId').equals(projectId).toArray()
+      : await db.statuses.toArray()
     return statuses.sort((a, b) => a.sort - b.sort)
   }
 
@@ -19,13 +22,19 @@ export class StatusRepository {
    * 分页获取数据
    * @param page 页码
    * @param pageSize 每页大小
+   * @param projectId 项目ID（可选）
    * @returns Promise<Status[]> 分页状态列表
    */
   async getPaginated(
     page: number = 1,
-    pageSize: number = 10
+    pageSize: number = 10,
+    projectId?: string
   ): Promise<Status[]> {
-    const statuses = await db.statuses
+    const query = projectId
+      ? db.statuses.where('projectId').equals(projectId)
+      : db.statuses
+
+    const statuses = await query
       .offset((page - 1) * pageSize)
       .limit(pageSize)
       .toArray()

@@ -52,5 +52,9 @@ export interface ConfigColumn {
   dataIndex: string
   key: string
   width?: number
-  render?: (value: any, record: ConfigItem, index: number) => React.ReactNode
+  render?: (
+    value: string | number | undefined,
+    record: ConfigItem,
+    index: number
+  ) => React.ReactNode
 }

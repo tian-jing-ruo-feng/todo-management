@@ -2,11 +2,12 @@ import { useLiveQuery } from 'dexie-react-hooks'
 import { useCallback, useMemo, useState } from 'react'
 import type { TaskFilterValues } from '../../../components/TaskFilterForm'
 import type { Status } from '../../../types/Status'
-import { getAllTasks } from '../../../utils/db'
+import db from '../../../utils/db'
 
 export type TaskFilterProps = {
   statusList: Status[]
   beforeCreateTask: (columnId: string) => void
+  projectId?: string
 }
 
 /**
@@ -15,12 +16,23 @@ export type TaskFilterProps = {
 export const useTaskFilter = ({
   statusList,
   beforeCreateTask,
+  projectId,
 }: TaskFilterProps) => {
-  // 任务列表
-  const tasks = useLiveQuery(async () => {
-    const tasks = await getAllTasks()
-    return tasks
-  })
+  // 任务列表 - 直接使用 db.tasks 查询以确保响应式更新
+  const tasks = useLiveQuery(
+    async () => {
+      let allTasks
+      if (projectId) {
+        allTasks = await db.tasks.where('projectId').equals(projectId).toArray()
+      } else {
+        allTasks = await db.tasks.toArray()
+      }
+      // 过滤已删除的任务
+      return allTasks.filter((task) => !task.isRemoved)
+    },
+    [projectId],
+    [] // 默认值为空数组
+  )
   // 当前过滤条件
   const [filters, setFilters] = useState<TaskFilterValues>({})
 

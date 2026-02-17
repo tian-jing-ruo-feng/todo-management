@@ -3,11 +3,13 @@ import { Form, Input, Modal, Select, Switch } from 'antd'
 import { useState } from 'react'
 import { useFilterOptions } from '../../pages/kanban/hooks/useFilterOptions'
 import DateTimePicker from '../DateTimePicker'
+import MemberSelector from '../MemberSelector'
 import RichTextEditor from '../RichTextEditor'
 
 interface TaskCreateModalProps {
   visible: boolean
   defaultStatus?: string
+  projectId?: string
   onClose: () => void
   onSave: (task: Task) => void
 }
@@ -15,13 +17,14 @@ interface TaskCreateModalProps {
 export default function TaskCreateModal({
   visible,
   defaultStatus = '',
+  projectId,
   onClose,
   onSave,
 }: TaskCreateModalProps) {
   const [form] = Form.useForm<Task>()
   const [content, setContent] = useState('')
   const [loading, setLoading] = useState(false)
-  const { statusList, priorityList, groupList } = useFilterOptions()
+  const { statusList, priorityList, groupList } = useFilterOptions(projectId)
 
   const handleOk = async () => {
     try {
@@ -31,6 +34,7 @@ export default function TaskCreateModal({
       const newTask: Task = {
         id: `task_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`,
         name: values.name,
+        projectId: projectId || '',
         status: values.status || defaultStatus,
         priority: values.priority || '',
         group: values.group || [],
@@ -42,6 +46,7 @@ export default function TaskCreateModal({
         expectStartTime: values.expectStartTime || null,
         expectEndTime: values.expectEndTime || null,
         sort: 0, // 默认排序值，后续会在KanbanBoard中重新计算
+        assignee: values.assignee,
       }
 
       onSave(newTask)
@@ -125,6 +130,10 @@ export default function TaskCreateModal({
               </Select.Option>
             ))}
           </Select>
+        </Form.Item>
+
+        <Form.Item name="assignee" label="负责人">
+          <MemberSelector projectId={projectId} />
         </Form.Item>
 
         <Form.Item name="isTop" label="是否置顶" valuePropName="checked">

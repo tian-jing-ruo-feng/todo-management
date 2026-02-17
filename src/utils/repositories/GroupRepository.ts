@@ -8,10 +8,13 @@ import db from '../db'
 export class GroupRepository {
   /**
    * 获取所有分组
+   * @param projectId 项目ID（可选）
    * @returns Promise<Group[]> 分组列表
    */
-  async getAll(): Promise<Group[]> {
-    const groups = await db.groups.toArray()
+  async getAll(projectId?: string): Promise<Group[]> {
+    const groups = projectId
+      ? await db.groups.where('projectId').equals(projectId).toArray()
+      : await db.groups.toArray()
     return groups.sort((a, b) => a.sort - b.sort)
   }
 
@@ -19,13 +22,19 @@ export class GroupRepository {
    * 分页获取数据
    * @param page 页码
    * @param pageSize 每页大小
+   * @param projectId 项目ID（可选）
    * @returns Promise<Group[]> 分页分组列表
    */
   async getPaginated(
     page: number = 1,
-    pageSize: number = 10
+    pageSize: number = 10,
+    projectId?: string
   ): Promise<Group[]> {
-    const groups = await db.groups
+    const query = projectId
+      ? db.groups.where('projectId').equals(projectId)
+      : db.groups
+
+    const groups = await query
       .offset((page - 1) * pageSize)
       .limit(pageSize)
       .toArray()

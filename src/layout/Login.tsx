@@ -1,6 +1,6 @@
 import { Button, Form, Input, Modal, message } from 'antd'
 import { useState } from 'react'
-import db from '../utils/db'
+import db from '@/db/db'
 
 type FieldType = {
   email?: string

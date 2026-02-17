@@ -1,0 +1,34 @@
+[
+  {
+    "id": "admin",
+    "name": "管理员",
+    "description": "可管理成员、所有任务，拥有完全控制权",
+    "permissions": [
+      "manage_members",
+      "manage_all_tasks",
+      "invite_members",
+      "remove_members",
+      "manage_project_settings",
+      "delete_project"
+    ]
+  },
+  {
+    "id": "member",
+    "name": "成员",
+    "description": "可查看和编辑分配给自己的任务，参与团队协作",
+    "permissions": [
+      "view_tasks",
+      "edit_assigned_tasks",
+      "create_tasks",
+      "comment_tasks"
+    ]
+  },
+  {
+    "id": "guest",
+    "name": "访客",
+    "description": "仅可查看任务，只读权限",
+    "permissions": [
+      "view_tasks"
+    ]
+  }
+]

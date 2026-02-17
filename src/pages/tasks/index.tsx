@@ -10,11 +10,16 @@ import { useTaskFilter } from '../kanban/hooks/useTaskFilter'
 import SelectTab, { type ButtonItem } from './SelectTab'
 import TaskTable from './TaskTable'
 
-export default function Tasks() {
+export interface TasksProps {
+  projectId?: string
+  onTabChange?: (item: ButtonItem) => void
+}
+
+export default function Tasks({ projectId, onTabChange }: TasksProps) {
   const [selectTab, setSelectTab] = useState<ButtonItem>()
   const [createModalVisible, setCreateModalVisible] = useState(false)
   const [defaultColumnId, setDefaultColumnId] = useState<string>('')
-  const { statusList, priorityList, groupList } = useFilterOptions()
+  const { statusList, priorityList, groupList } = useFilterOptions(projectId)
 
   const beforeCreateTask = () => {}
   const {
@@ -22,10 +27,15 @@ export default function Tasks() {
     handleFilterChange,
     handleResetFilter,
     handleUploadSuccess,
-  } = useTaskFilter({ statusList: statusList ?? [], beforeCreateTask })
+  } = useTaskFilter({
+    statusList: statusList ?? [],
+    beforeCreateTask,
+    projectId,
+  })
 
   const handleSelectTabChange = (item: ButtonItem) => {
     setSelectTab(item)
+    onTabChange?.(item)
   }
 
   const handleRefresh = () => {}
@@ -68,7 +78,7 @@ export default function Tasks() {
   return (
     <div className="flex flex-col gap-3 p-3 size-full overflow-hidden">
       {/* <TaskStatistc></TaskStatistc> */}
-      <SelectTab onChange={handleSelectTabChange}></SelectTab>
+      <SelectTab onChange={handleSelectTabChange} showProjectTab></SelectTab>
       {/* 任务过滤表单 */}
       <TaskFilterForm
         visible={selectTab?.key === 'kanban' || selectTab?.key === 'priority'}
@@ -86,7 +96,7 @@ export default function Tasks() {
         </div>
       )}
 
-      {selectTab?.key === 'config' && <ConfigPage />}
+      {selectTab?.key === 'config' && <ConfigPage projectId={projectId} />}
 
       {selectTab?.key === 'priority' && (
         <div className="flex-1 size-full flex flex-col overflow-hidden">
@@ -101,6 +111,7 @@ export default function Tasks() {
       <TaskCreateModal
         visible={createModalVisible}
         defaultStatus={defaultColumnId}
+        projectId={projectId}
         onClose={handleCreateModalClose}
         onSave={handleCreateTask}
       />

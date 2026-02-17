@@ -30,7 +30,11 @@ import ConfigList from './ConfigList'
 import ConfigTabs from './ConfigTabs'
 import DeleteDialog from './DeleteDialog'
 
-export default function ConfigPage() {
+export interface ConfigPageProps {
+  projectId?: string
+}
+
+export default function ConfigPage({ projectId }: ConfigPageProps) {
   const [tagIcon, setTagIcon] = useState<React.ReactNode>(<ToolOutlined />)
   const [activeKey, setActiveKey] = useState<string>(ConfigType.Status)
   const [data, setData] = useState<ConfigItem[]>([])
@@ -60,13 +64,17 @@ export default function ConfigPage() {
       let items: ConfigItem[] = []
       switch (type) {
         case ConfigType.Status:
-          items = await statusRepository.getPaginated(page, pageSize)
+          items = await statusRepository.getPaginated(page, pageSize, projectId)
           break
         case ConfigType.Priority:
-          items = await priorityRepository.getPaginated(page, pageSize)
+          items = await priorityRepository.getPaginated(
+            page,
+            pageSize,
+            projectId
+          )
           break
         case ConfigType.Group:
-          items = await groupRepository.getPaginated(page, pageSize)
+          items = await groupRepository.getPaginated(page, pageSize, projectId)
           break
       }
       setData(items)
@@ -89,7 +97,8 @@ export default function ConfigPage() {
   // 初始化加载
   useEffect(() => {
     loadData(activeKey, currentPage, pageSize)
-  }, [activeKey, currentPage, pageSize])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeKey, currentPage, pageSize, projectId])
 
   useEffect(() => {
     switch (activeKey) {
@@ -126,6 +135,7 @@ export default function ConfigPage() {
         id: editingItem?.id || `${activeKey}_${Date.now()}`,
         name: values.name,
         color: values.color,
+        ...(projectId ? { projectId, realmId: projectId } : {}),
       }
       switch (activeKey) {
         case ConfigType.Status:
@@ -172,13 +182,13 @@ export default function ConfigPage() {
       setIsExporting(true)
       switch (activeKey) {
         case ConfigType.Status:
-          jsonData = await statusRepository.getAll()
+          jsonData = await statusRepository.getAll(projectId)
           break
         case ConfigType.Priority:
-          jsonData = await priorityRepository.getAll()
+          jsonData = await priorityRepository.getAll(projectId)
           break
         case ConfigType.Group:
-          jsonData = await groupRepository.getAll()
+          jsonData = await groupRepository.getAll(projectId)
           break
       }
       const fileName = `${activeKey}-${dayjs().format('YYYY-MM-DD-HH-mm-ss')}.json`
