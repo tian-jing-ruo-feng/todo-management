@@ -26,7 +26,7 @@ export class ToDoDb extends Dexie {
   roles!: Dexie.Table<DBRealmRole>
 
   constructor() {
-    super('ToDoDB', {
+    super('TodoDB', {
       addons: [dexieCloud],
     })
 
