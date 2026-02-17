@@ -54,7 +54,7 @@ export class ToDoDb extends Dexie {
       requireAuth: true,
       customLoginGui: true,
       // When set, local changes will not trigger a sync towards the server.
-      disableEagerSync: true,
+      // disableEagerSync: true,
     })
 
     this.groups.mapToClass(Group)
