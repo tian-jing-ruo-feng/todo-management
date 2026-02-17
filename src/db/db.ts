@@ -30,12 +30,12 @@ export class ToDoDb extends Dexie {
       addons: [dexieCloud],
     })
 
-    this.version(1).stores({
-      tasks: 'id, name, group, status, priority',
-      statuses: 'id, name',
-      priorities: 'id, name',
-      groups: 'id, name',
-    })
+    // this.version(1).stores({
+    //   tasks: 'id, name, group, status, priority',
+    //   statuses: 'id, name',
+    //   priorities: 'id, name',
+    //   groups: 'id, name',
+    // })
 
     // 升级到版本2：添加项目中心架构
     this.version(2).stores({
@@ -54,7 +54,7 @@ export class ToDoDb extends Dexie {
       requireAuth: true,
       customLoginGui: true,
       // When set, local changes will not trigger a sync towards the server.
-      // disableEagerSync: true,
+      disableEagerSync: true,
     })
 
     this.groups.mapToClass(Group)
