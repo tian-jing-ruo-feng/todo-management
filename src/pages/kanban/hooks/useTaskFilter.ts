@@ -3,6 +3,10 @@ import { useCallback, useMemo, useState } from 'react'
 import type { TaskFilterValues } from '../../../components/TaskFilterForm'
 import type { Status } from '../../../types/Status'
 import db from '../../../utils/db'
+import { decryptTasks } from '../../../utils/crypto'
+
+// 从环境变量获取加密密钥
+const ENCRYPTION_KEY = import.meta.env.VITE_ENCRYPTION_KEY || ''
 
 export type TaskFilterProps = {
   statusList: Status[]
@@ -28,7 +32,11 @@ export const useTaskFilter = ({
         allTasks = await db.tasks.toArray()
       }
       // 过滤已删除的任务
-      return allTasks.filter((task) => !task.isRemoved)
+      const activeTasks = allTasks.filter((task) => !task.isRemoved)
+      // 解密敏感字段
+      return ENCRYPTION_KEY
+        ? decryptTasks(activeTasks, ENCRYPTION_KEY)
+        : activeTasks
     },
     [projectId],
     [] // 默认值为空数组
