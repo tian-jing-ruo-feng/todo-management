@@ -1,14 +1,24 @@
-import { useState } from 'react'
+import { useCallback, useState } from 'react'
 import { Tabs, Card, Button, Spin } from 'antd'
 import {
   ProjectOutlined,
   SettingOutlined,
   TeamOutlined,
   ArrowLeftOutlined,
+  TableOutlined,
+  OrderedListOutlined,
 } from '@ant-design/icons'
 import { useProject } from '@/services/projectService'
 import ConfigPage from '../config'
 import MemberManagement from './MemberManagement'
+import TaskFilterForm from '@/components/TaskFilterForm'
+import TaskCreateModal from '@/components/TaskCreateModal'
+import KanbanPage from '../kanban'
+import TaskTable from '../tasks/TaskTable'
+import { useFilterOptions } from '../kanban/hooks/useFilterOptions'
+import { useTaskFilter } from '../kanban/hooks/useTaskFilter'
+import { getAllTasksCount, saveTask } from '@/utils/db'
+import type { Task } from '@/types/Task'
 
 export interface ProjectDetailProps {
   projectId: string
@@ -20,7 +30,53 @@ export default function ProjectDetail({
   onBack,
 }: ProjectDetailProps) {
   const project = useProject(projectId)
-  const [activeTab, setActiveTab] = useState('config')
+  const [activeTab, setActiveTab] = useState('kanban')
+  const [createModalVisible, setCreateModalVisible] = useState(false)
+  const [defaultColumnId, setDefaultColumnId] = useState<string>('')
+
+  const { statusList, priorityList, groupList } = useFilterOptions(projectId)
+
+  const beforeCreateTask = () => {}
+  const {
+    filteredTasks,
+    handleFilterChange,
+    handleResetFilter,
+    handleUploadSuccess,
+  } = useTaskFilter({
+    statusList: statusList ?? [],
+    beforeCreateTask,
+    projectId,
+  })
+
+  const handleRefresh = () => {}
+
+  const handleAddTask = useCallback(
+    (columnId?: string) => {
+      if (!columnId) {
+        columnId = statusList?.length ? statusList[0].id : ''
+      }
+      setDefaultColumnId(columnId)
+      setCreateModalVisible(true)
+    },
+    [statusList]
+  )
+
+  const handleCreateModalClose = useCallback(() => {
+    setCreateModalVisible(false)
+    setDefaultColumnId('')
+  }, [])
+
+  const handleCreateTask = async (newTask: Task) => {
+    let newTaskWithSort = newTask
+    try {
+      const taskCount = await getAllTasksCount()
+      newTaskWithSort = { ...newTask, sort: taskCount + 1 }
+      await saveTask(newTaskWithSort)
+    } catch (error) {
+      console.error('创建任务失败:', error)
+      return
+    }
+  }
 
   if (!project) {
     return (
@@ -30,7 +86,46 @@ export default function ProjectDetail({
     )
   }
 
+  const showFilterForm = activeTab === 'kanban' || activeTab === 'priority'
+
   const tabItems = [
+    {
+      key: 'kanban',
+      label: (
+        <span className="flex items-center gap-2">
+          <TableOutlined />
+          看板视图
+        </span>
+      ),
+      children: (
+        <div className="flex-1 size-full overflow-auto">
+          <KanbanPage
+            tasks={filteredTasks}
+            onRefresh={handleRefresh}
+            projectId={projectId}
+          />
+        </div>
+      ),
+    },
+    {
+      key: 'priority',
+      label: (
+        <span className="flex items-center gap-2">
+          <OrderedListOutlined />
+          优先级视图
+        </span>
+      ),
+      children: (
+        <div className="flex-1 size-full flex flex-col overflow-hidden">
+          <TaskTable
+            filteredTasks={filteredTasks || []}
+            statusList={statusList || []}
+            priorityList={priorityList || []}
+            groupList={groupList || []}
+          />
+        </div>
+      ),
+    },
     {
       key: 'config',
       label: (
@@ -77,6 +172,17 @@ export default function ProjectDetail({
         </div>
       </Card>
 
+      {/* 任务过滤表单 */}
+      {showFilterForm && (
+        <TaskFilterForm
+          visible={showFilterForm}
+          onFilterChange={handleFilterChange}
+          onReset={handleResetFilter}
+          onUploadSuccess={handleUploadSuccess}
+          onAddTask={handleAddTask}
+        />
+      )}
+
       {/* 标签页内容 */}
       <Card className="flex-1 overflow-hidden">
         <Tabs
@@ -86,6 +192,15 @@ export default function ProjectDetail({
           className="h-full"
         />
       </Card>
+
+      {/* 创建任务弹窗 */}
+      <TaskCreateModal
+        visible={createModalVisible}
+        defaultStatus={defaultColumnId}
+        projectId={projectId}
+        onClose={handleCreateModalClose}
+        onSave={handleCreateTask}
+      />
     </div>
   )
 }

@@ -82,7 +82,12 @@ export class ProjectService {
     const projectId = `project_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
     const now = new Date().toISOString()
 
-    console.log('[createProject] 开始创建项目, projectId:', projectId, 'userId:', currentUserId)
+    console.log(
+      '[createProject] 开始创建项目, projectId:',
+      projectId,
+      'userId:',
+      currentUserId
+    )
 
     await db.transaction(
       'rw',
@@ -296,19 +301,21 @@ export function useProjects() {
 
   console.log('[useProjects] 状态:', { userLoggedIn, userId })
 
-  return useLiveQuery(
-    async () => {
-      console.log('[useProjects] 查询执行, userLoggedIn:', userLoggedIn, 'userId:', userId)
-      if (!userLoggedIn || !userId) {
-        console.log('[useProjects] 条件不满足，返回空数组')
-        return []
-      }
-      const projects = await ProjectService.getUserProjects(userId)
-      console.log('[useProjects] 查询结果:', projects.length, '个项目')
-      return projects
-    },
-    [userLoggedIn, userId]
-  )
+  return useLiveQuery(async () => {
+    console.log(
+      '[useProjects] 查询执行, userLoggedIn:',
+      userLoggedIn,
+      'userId:',
+      userId
+    )
+    if (!userLoggedIn || !userId) {
+      console.log('[useProjects] 条件不满足，返回空数组')
+      return []
+    }
+    const projects = await ProjectService.getUserProjects(userId)
+    console.log('[useProjects] 查询结果:', projects.length, '个项目')
+    return projects
+  }, [userLoggedIn, userId])
 }
 
 /**

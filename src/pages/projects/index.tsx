@@ -25,9 +25,15 @@ export default function ProjectsPage({
   const handleCreateProject = async (name: string, description?: string) => {
     setLoading(true)
     try {
-      await ProjectService.createProject(name, description, userId)
+      const projectId = await ProjectService.createProject(
+        name,
+        description,
+        userId
+      )
       message.success('项目创建成功')
       setCreateModalVisible(false)
+      // 创建成功后自动切换到新项目
+      onProjectSelect?.(projectId)
     } catch (error) {
       console.error('创建项目失败:', error)
       message.error('创建项目失败')

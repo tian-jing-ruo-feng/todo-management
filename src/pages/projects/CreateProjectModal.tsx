@@ -42,7 +42,7 @@ export default function CreateProjectModal({
       okText="创建"
       cancelText="取消"
       width={520}
-      destroyOnClose
+      destroyOnHidden
     >
       <Form form={form} layout="vertical" className="mt-4">
         <Form.Item

@@ -16,7 +16,12 @@ export interface TasksProps {
 }
 
 export default function Tasks({ projectId, onTabChange }: TasksProps) {
-  const [selectTab, setSelectTab] = useState<ButtonItem>()
+  const [selectTab, setSelectTab] = useState<ButtonItem>({
+    title: '看板视图',
+    key: 'kanban',
+    icon: null,
+    isActive: true,
+  })
   const [createModalVisible, setCreateModalVisible] = useState(false)
   const [defaultColumnId, setDefaultColumnId] = useState<string>('')
   const { statusList, priorityList, groupList } = useFilterOptions(projectId)

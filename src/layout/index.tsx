@@ -1,6 +1,7 @@
 import { Layout, message } from 'antd'
 import { useEffect, useState } from 'react'
 import { runMigrationIfNeeded } from '@/utils/migration'
+import { initConfigData } from '@/utils/initConfigData'
 import { useUser } from '@/hooks/useUser'
 import Tasks from '../pages/tasks'
 import ProjectsPage from '../pages/projects'
@@ -37,13 +38,15 @@ export default function PageLayout() {
   // 用户登录后执行数据迁移
   useEffect(() => {
     if (userLoggedIn && !migrationComplete) {
-      runMigrationIfNeeded()
+      // 先初始化配置数据
+      initConfigData()
+        .then(() => runMigrationIfNeeded())
         .then(() => {
           setMigrationComplete(true)
         })
         .catch((error) => {
-          console.error('数据迁移失败:', error)
-          message.error('数据迁移失败，请刷新页面重试')
+          console.error('数据初始化/迁移失败:', error)
+          message.error('数据初始化失败，请刷新页面重试')
         })
     }
   }, [userLoggedIn, migrationComplete])
