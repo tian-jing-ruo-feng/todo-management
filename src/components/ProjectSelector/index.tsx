@@ -19,7 +19,7 @@ export default function ProjectSelector({
 }: ProjectSelectorProps) {
   const projects = useProjects()
   const [loading, setLoading] = useState(false)
-  const { isLoggedIn: userLoggedIn } = useUser()
+  const { isLoggedIn: userLoggedIn, userId } = useUser()
 
   // 自动选择第一个项目
   useEffect(() => {
@@ -39,7 +39,8 @@ export default function ProjectSelector({
     try {
       const projectId = await ProjectService.createProject(
         '我的第一个项目',
-        '默认项目'
+        '默认项目',
+        userId
       )
       onProjectChange?.(projectId)
       message.success('项目创建成功')

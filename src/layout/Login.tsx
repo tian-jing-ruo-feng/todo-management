@@ -66,39 +66,28 @@ export function MyLoginGUI(props: {
       return
     }
     setIsLogining(true)
-    try {
-      await db.cloud.login({
+    db.cloud
+      .login({
         email: form.getFieldValue('email'),
         otp: form.getFieldValue('otp'),
         otpId: emailSendResult.otp_id.toString(),
         grant_type: 'otp',
       })
-    } catch (error) {
-      message.error('登录失败')
-      setIsLogining(false)
-      console.log(error)
-      onLoginSuccess()
-      setTimeout(() => {
-        window.location.reload()
-      }, 300)
-      return
-    }
-    // await db.cloud.login({
-    //   email: form.getFieldValue('email'),
-    //   otp: form.getFieldValue('otp'),
-    //   otpId: emailSendResult.otp_id.toString(),
-    //   grant_type: 'otp',
-    // })
-    // .then(() => {
-    //   message.success('登录成功')
-    //   onLoginSuccess()
-    //   setTimeout(() => {
-    //     window.location.reload()
-    //   }, 300)
-    // })
-    // .finally(() => {
-    //   setIsLogining(false)
-    // })
+      .then(() => {
+        message.success('登录成功')
+        onLoginSuccess()
+        // setTimeout(() => {
+        //   window.location.reload()
+        // }, 300)
+      })
+      .catch((error) => {
+        message.error('登录失败')
+        setIsLogining(false)
+        console.log(error)
+      })
+      .finally(() => {
+        setIsLogining(false)
+      })
   }
 
   const handelOnClose = () => {

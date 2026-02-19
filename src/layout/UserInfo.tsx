@@ -1,4 +1,4 @@
-import { Button, Dropdown, message } from 'antd'
+import { Button, Dropdown, message, Spin } from 'antd'
 import type { MenuProps } from 'antd'
 import { TeamOutlined, UserOutlined, LogoutOutlined } from '@ant-design/icons'
 import db from '../utils/db'
@@ -6,8 +6,7 @@ import { useUser } from '@/hooks/useUser'
 
 export default function UserInfo(props: { login: () => void }) {
   const { login } = props
-  const { user, isLoggedIn: userLoggedIn } = useUser()
-  console.log(user, '<<< user, login comp')
+  const { user, isLoggedIn: userLoggedIn, isLoading } = useUser()
 
   const handleMenuClick: MenuProps['onClick'] = async (e) => {
     if (e.key === 'logout') {
@@ -43,6 +42,18 @@ export default function UserInfo(props: { login: () => void }) {
     },
   ]
 
+  // 加载中状态
+  if (isLoading) {
+    return (
+      <div className="flex justify-between items-center h-full leading-none">
+        <div className="font-bold text-2xl text-white">统一工作管理系统</div>
+        <div className="flex items-center gap-4">
+          <Spin size="small" />
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className="flex justify-between items-center h-full leading-none">
       <div className="font-bold text-2xl text-white">统一工作管理系统</div>
@@ -54,7 +65,7 @@ export default function UserInfo(props: { login: () => void }) {
           >
             <h2 className="font-bold cursor-pointer">
               <span>欢迎，</span>
-              {user.name}
+              {user?.name}
             </h2>
           </Dropdown>
         ) : (

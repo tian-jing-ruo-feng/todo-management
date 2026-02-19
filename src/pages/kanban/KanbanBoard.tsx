@@ -36,9 +36,14 @@ interface KanbanBoardProps {
   tasks: Task[]
   onUploadSuccess: () => void
   onDragEnd: () => void
+  projectId?: string
 }
 
-export default function KanbanBoard({ tasks, onDragEnd }: KanbanBoardProps) {
+export default function KanbanBoard({
+  tasks,
+  onDragEnd,
+  projectId,
+}: KanbanBoardProps) {
   // 动态状态和列管理
   const [statusList, setStatusList] = useState<
     Array<{ id: string; name: string; color: string }>
@@ -49,7 +54,7 @@ export default function KanbanBoard({ tasks, onDragEnd }: KanbanBoardProps) {
   useEffect(() => {
     const loadStatusData = async () => {
       try {
-        const statuses = await statusRepository.getAll()
+        const statuses = await statusRepository.getAll(projectId)
         setStatusList(statuses)
 
         // 根据状态数据动态生成列
@@ -66,7 +71,7 @@ export default function KanbanBoard({ tasks, onDragEnd }: KanbanBoardProps) {
     }
 
     loadStatusData()
-  }, [])
+  }, [projectId])
 
   // 动态状态映射
   const getColumnByStatus = useCallback(

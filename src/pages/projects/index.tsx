@@ -20,12 +20,12 @@ export default function ProjectsPage({
   const [deleteModalVisible, setDeleteModalVisible] = useState(false)
   const [selectedProjectId, setSelectedProjectId] = useState<string>()
   const [loading, setLoading] = useState(false)
-  const { isLoggedIn: userLoggedIn } = useUser()
+  const { isLoggedIn: userLoggedIn, userId } = useUser()
 
   const handleCreateProject = async (name: string, description?: string) => {
     setLoading(true)
     try {
-      await ProjectService.createProject(name, description)
+      await ProjectService.createProject(name, description, userId)
       message.success('项目创建成功')
       setCreateModalVisible(false)
     } catch (error) {

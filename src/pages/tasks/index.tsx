@@ -92,6 +92,7 @@ export default function Tasks({ projectId, onTabChange }: TasksProps) {
           <KanbanPage
             tasks={filteredTasks}
             onRefresh={handleRefresh}
+            projectId={projectId}
           ></KanbanPage>
         </div>
       )}
