@@ -86,6 +86,9 @@ export class MemberService {
       userId,
       invite: undefined,
     })
+
+    // 触发同步，确保变更上传到云端
+    await db.cloud.sync()
   }
 
   /**

@@ -93,18 +93,18 @@ export class ProjectService {
       'rw',
       [db.projects, db.statuses, db.priorities, db.groups],
       async () => {
-        // 创建项目 - 不设置 realmId，让 Dexie Cloud 自动处理
+        // 创建项目 - 使用 projectId 作为 realmId，创建独立的项目权限域
         await db.projects.add({
           id: projectId,
           name,
           description,
           owner: currentUserId,
-          // 不设置 realmId，让 Dexie Cloud 自动设置
+          realmId: projectId, // 使用项目ID作为 realmId，创建共享的项目 realm
           createTime: now,
           updateTime: now,
         })
 
-        // 初始化默认状态 - 同样不设置 realmId
+        // 初始化默认状态
         await db.statuses.bulkAdd([
           {
             id: `${projectId}_status_todo`,
@@ -112,6 +112,7 @@ export class ProjectService {
             color: '#999999',
             projectId,
             owner: currentUserId,
+            realmId: projectId,
             sort: 0,
           },
           {
@@ -120,6 +121,7 @@ export class ProjectService {
             color: '#1890ff',
             projectId,
             owner: currentUserId,
+            realmId: projectId,
             sort: 1,
           },
           {
@@ -128,11 +130,12 @@ export class ProjectService {
             color: '#52c41a',
             projectId,
             owner: currentUserId,
+            realmId: projectId,
             sort: 2,
           },
         ])
 
-        // 初始化默认优先级 - 同样不设置 realmId
+        // 初始化默认优先级
         await db.priorities.bulkAdd([
           {
             id: `${projectId}_priority_low`,
@@ -140,6 +143,7 @@ export class ProjectService {
             color: '#999999',
             projectId,
             owner: currentUserId,
+            realmId: projectId,
             sort: 0,
           },
           {
@@ -148,6 +152,7 @@ export class ProjectService {
             color: '#1890ff',
             projectId,
             owner: currentUserId,
+            realmId: projectId,
             sort: 1,
           },
           {
@@ -156,6 +161,7 @@ export class ProjectService {
             color: '#ff4d4f',
             projectId,
             owner: currentUserId,
+            realmId: projectId,
             sort: 2,
           },
         ])

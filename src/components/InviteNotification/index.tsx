@@ -47,7 +47,7 @@ export default function InviteNotification() {
 
     setLoading(inviteId)
     try {
-      await MemberService.acceptInvite(inviteId, user.userId)
+      await MemberService.acceptInvite(inviteId, userId)
       message.success('已接受邀请')
     } catch (error) {
       console.error('接受邀请失败:', error)
