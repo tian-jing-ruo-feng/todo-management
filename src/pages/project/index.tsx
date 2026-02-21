@@ -99,6 +99,15 @@ export default function ProjectDetail({
       ),
       children: (
         <div className="flex-1 size-full overflow-auto">
+          {showFilterForm && (
+            <TaskFilterForm
+              visible={showFilterForm}
+              onFilterChange={handleFilterChange}
+              onReset={handleResetFilter}
+              onUploadSuccess={handleUploadSuccess}
+              onAddTask={handleAddTask}
+            />
+          )}
           <KanbanPage
             tasks={filteredTasks}
             onRefresh={handleRefresh}
@@ -117,6 +126,15 @@ export default function ProjectDetail({
       ),
       children: (
         <div className="flex-1 size-full flex flex-col overflow-hidden">
+          {showFilterForm && (
+            <TaskFilterForm
+              visible={showFilterForm}
+              onFilterChange={handleFilterChange}
+              onReset={handleResetFilter}
+              onUploadSuccess={handleUploadSuccess}
+              onAddTask={handleAddTask}
+            />
+          )}
           <TaskTable
             filteredTasks={filteredTasks || []}
             statusList={statusList || []}
@@ -173,7 +191,7 @@ export default function ProjectDetail({
       </Card>
 
       {/* 任务过滤表单 */}
-      {showFilterForm && (
+      {/* {showFilterForm && (
         <TaskFilterForm
           visible={showFilterForm}
           onFilterChange={handleFilterChange}
@@ -181,15 +199,23 @@ export default function ProjectDetail({
           onUploadSuccess={handleUploadSuccess}
           onAddTask={handleAddTask}
         />
-      )}
+      )} */}
 
       {/* 标签页内容 */}
-      <Card className="flex-1 overflow-hidden">
+      <Card
+        className="flex-1 overflow-hidden"
+        classNames={{
+          body: 'size-full flex flex-col gap-3',
+        }}
+      >
         <Tabs
           activeKey={activeTab}
           onChange={setActiveTab}
           items={tabItems}
-          className="h-full"
+          className="h-full flex flex-col"
+          classNames={{
+            content: 'size-full flex-1',
+          }}
         />
       </Card>
 
