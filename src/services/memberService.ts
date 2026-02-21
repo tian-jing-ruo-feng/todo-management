@@ -46,15 +46,14 @@ export class MemberService {
     }
 
     // 创建邀请记录
+    // Dexie Cloud 的 members 表要求 ID 必须以 "mmb" 前缀开头
     await db.members.add({
-      id: `member_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+      id: `mmb${Date.now()}_${Math.random().toString(36).slice(2, 11)}`,
       realmId: project.realmId,
       email,
       roles: [role],
-      invite: {
-        status: 'sent',
-        timestamp: new Date().toISOString(),
-      },
+      invite: true,
+      owner: db.cloud.currentUserId!,
     })
   }
 
@@ -103,7 +102,7 @@ export class MemberService {
     const invites = await db.members
       .where('email')
       .equals(userEmail)
-      .filter((member) => member.invite?.status === 'sent')
+      .filter((member) => member.invite === true)
       .toArray()
 
     return invites

@@ -192,6 +192,11 @@ export default function MemberManagement({ projectId }: MemberManagementProps) {
           </div>
         )}
         <Empty description="暂无成员" />
+        <InviteModal
+          visible={inviteModalVisible}
+          projectId={projectId}
+          onClose={() => setInviteModalVisible(false)}
+        />
       </div>
     )
   }
