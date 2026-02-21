@@ -19,6 +19,7 @@ import { useFilterOptions } from '../kanban/hooks/useFilterOptions'
 import { useTaskFilter } from '../kanban/hooks/useTaskFilter'
 import { getAllTasksCount, saveTask } from '@/utils/db'
 import type { Task } from '@/types/Task'
+import './index.css'
 
 export interface ProjectDetailProps {
   projectId: string
@@ -98,7 +99,7 @@ export default function ProjectDetail({
         </span>
       ),
       children: (
-        <div className="flex-1 size-full overflow-auto">
+        <div className="p-2 flex-1 size-full overflow-auto flex flex-col gap-3">
           {showFilterForm && (
             <TaskFilterForm
               visible={showFilterForm}
@@ -190,17 +191,6 @@ export default function ProjectDetail({
         </div>
       </Card>
 
-      {/* 任务过滤表单 */}
-      {/* {showFilterForm && (
-        <TaskFilterForm
-          visible={showFilterForm}
-          onFilterChange={handleFilterChange}
-          onReset={handleResetFilter}
-          onUploadSuccess={handleUploadSuccess}
-          onAddTask={handleAddTask}
-        />
-      )} */}
-
       {/* 标签页内容 */}
       <Card
         className="flex-1 overflow-hidden"
@@ -212,10 +202,7 @@ export default function ProjectDetail({
           activeKey={activeTab}
           onChange={setActiveTab}
           items={tabItems}
-          className="h-full flex flex-col"
-          classNames={{
-            content: 'size-full flex-1',
-          }}
+          className="size-full flex flex-col"
         />
       </Card>
 
