@@ -1,6 +1,7 @@
 import Dexie from 'dexie'
 import {
   dexieCloud,
+  type DBRealm,
   type DBRealmMember,
   type DBRealmRole,
 } from 'dexie-cloud-addon'
@@ -21,9 +22,10 @@ export class ToDoDb extends Dexie {
   statuses!: Dexie.Table<StatusType>
   priorities!: Dexie.Table<PriorityType>
   groups!: Dexie.Table<GroupType>
-  // 使用 Dexie Cloud 内置的 members 和 roles 表
+  // 使用 Dexie Cloud 内置的 members, roles 和 realms 表
   members!: Dexie.Table<DBRealmMember>
   roles!: Dexie.Table<DBRealmRole>
+  realms!: Dexie.Table<DBRealm>
 
   constructor() {
     super('TodoDB', {
@@ -40,6 +42,7 @@ export class ToDoDb extends Dexie {
       // Dexie Cloud 内置表的索引定义
       members: '@id, [userId+realmId], [email+realmId], realmId',
       roles: '[realmId+name]',
+      realms: '@realmId', // realmId 作为主键
     })
 
     // 升级到版本3：添加 realmId 索引

@@ -80,6 +80,7 @@ export class ProjectService {
     }
 
     const projectId = `project_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
+    const realmId = `rlm_${projectId}` // Dexie Cloud realms 表主键需要 "rlm" 前缀
     const now = new Date().toISOString()
 
     console.log(
@@ -91,15 +92,29 @@ export class ProjectService {
 
     await db.transaction(
       'rw',
-      [db.projects, db.statuses, db.priorities, db.groups],
+      [
+        db.projects,
+        db.statuses,
+        db.priorities,
+        db.groups,
+        db.members,
+        db.realms,
+      ],
       async () => {
-        // 创建项目 - 使用 projectId 作为 realmId，创建独立的项目权限域
+        // 创建 realm 记录，Dexie Cloud 需要这个来管理权限
+        await db.realms.add({
+          realmId,
+          name,
+          owner: currentUserId,
+        })
+
+        // 创建项目 - 使用独立的 realmId，创建独立的项目权限域
         await db.projects.add({
           id: projectId,
           name,
           description,
           owner: currentUserId,
-          realmId: projectId, // 使用项目ID作为 realmId，创建共享的项目 realm
+          realmId, // 关联到项目专属的 realm
           createTime: now,
           updateTime: now,
         })
@@ -112,7 +127,7 @@ export class ProjectService {
             color: '#999999',
             projectId,
             owner: currentUserId,
-            realmId: projectId,
+            realmId,
             sort: 0,
           },
           {
@@ -121,7 +136,7 @@ export class ProjectService {
             color: '#1890ff',
             projectId,
             owner: currentUserId,
-            realmId: projectId,
+            realmId,
             sort: 1,
           },
           {
@@ -130,7 +145,7 @@ export class ProjectService {
             color: '#52c41a',
             projectId,
             owner: currentUserId,
-            realmId: projectId,
+            realmId,
             sort: 2,
           },
         ])
@@ -143,7 +158,7 @@ export class ProjectService {
             color: '#999999',
             projectId,
             owner: currentUserId,
-            realmId: projectId,
+            realmId,
             sort: 0,
           },
           {
@@ -152,7 +167,7 @@ export class ProjectService {
             color: '#1890ff',
             projectId,
             owner: currentUserId,
-            realmId: projectId,
+            realmId,
             sort: 1,
           },
           {
@@ -161,10 +176,19 @@ export class ProjectService {
             color: '#ff4d4f',
             projectId,
             owner: currentUserId,
-            realmId: projectId,
+            realmId,
             sort: 2,
           },
         ])
+
+        // 创建项目成员记录，将创建者添加为项目管理员
+        await db.members.add({
+          id: `mmb_${projectId}_${currentUserId}`, // Dexie Cloud members 表主键需要 "mmb" 前缀
+          userId: currentUserId,
+          realmId,
+          owner: currentUserId,
+          roles: ['owner'], // 使用 owner 角色表示项目所有者
+        })
       }
     )
 
