@@ -19,10 +19,11 @@ import {
 import { useUserInvites, MemberService } from '@/services/memberService'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { useUser } from '@/hooks/useUser'
+import type { Invite } from 'dexie-cloud-addon'
 
 export default function InviteNotification() {
   const invites = useUserInvites()
-  const { userId, isLoggedIn: userLoggedIn } = useUser()
+  const { isLoggedIn: userLoggedIn } = useUser()
   const [loading, setLoading] = useState<string>()
 
   // 获取邀请详情（包含项目信息）
@@ -31,23 +32,29 @@ export default function InviteNotification() {
 
     const details = await Promise.all(
       invites.map(async (invite) => {
-        const detail = await MemberService.getInviteDetails(invite.id!)
+        // 邀请对象可能已经包含 realm 信息
+        if (invite.realm?.name) {
+          return {
+            invite,
+            projectName: invite.realm.name,
+          }
+        }
+        // 否则从 realms 表获取
+        const realm = await MemberService.getInviteDetails(invite.id)
         return {
           invite,
-          project: detail?.project,
+          projectName: realm?.project?.name || '未知项目',
         }
       })
     )
 
-    return details.filter((d) => d.project)
+    return details.filter((d) => d.projectName)
   }, [invites])
 
-  const handleAccept = async (inviteId: string) => {
-    if (!userId) return
-
-    setLoading(inviteId)
+  const handleAccept = async (invite: Invite) => {
+    setLoading(invite.id)
     try {
-      await MemberService.acceptInvite(inviteId, userId)
+      await MemberService.acceptInvite(invite)
       message.success('已接受邀请')
     } catch (error) {
       console.error('接受邀请失败:', error)
@@ -57,16 +64,16 @@ export default function InviteNotification() {
     }
   }
 
-  const handleReject = async (inviteId: string) => {
+  const handleReject = async (invite: Invite) => {
     Modal.confirm({
       title: '拒绝邀请',
       content: '确定要拒绝这个邀请吗？',
       okText: '确认',
       cancelText: '取消',
       onOk: async () => {
-        setLoading(inviteId)
+        setLoading(invite.id)
         try {
-          await MemberService.rejectInvite(inviteId)
+          await MemberService.rejectInvite(invite)
           message.success('已拒绝邀请')
         } catch (error) {
           console.error('拒绝邀请失败:', error)
@@ -97,7 +104,7 @@ export default function InviteNotification() {
       ) : (
         <List
           dataSource={inviteDetails}
-          renderItem={({ invite, project }) => (
+          renderItem={({ invite, projectName }) => (
             <List.Item className="px-4 py-3 hover:bg-gray-50">
               <div className="w-full">
                 <div className="flex items-start gap-3 mb-2">
@@ -107,14 +114,16 @@ export default function InviteNotification() {
                     style={{ backgroundColor: '#6253e1' }}
                   />
                   <div className="flex-1 min-w-0">
-                    <div className="font-medium text-base">{project?.name}</div>
+                    <div className="font-medium text-base">{projectName}</div>
                     <div className="text-sm text-gray-500">
                       角色：
                       {invite.roles?.[0] === 'admin'
                         ? '管理员'
                         : invite.roles?.[0] === 'member'
                           ? '成员'
-                          : '访客'}
+                          : invite.roles?.[0] === 'owner'
+                            ? '所有者'
+                            : '访客'}
                     </div>
                   </div>
                 </div>
@@ -124,7 +133,7 @@ export default function InviteNotification() {
                     size="small"
                     icon={<CheckOutlined />}
                     loading={loading === invite.id}
-                    onClick={() => handleAccept(invite.id!)}
+                    onClick={() => handleAccept(invite)}
                   >
                     接受
                   </Button>
@@ -132,7 +141,7 @@ export default function InviteNotification() {
                     size="small"
                     icon={<CloseOutlined />}
                     loading={loading === invite.id}
-                    onClick={() => handleReject(invite.id!)}
+                    onClick={() => handleReject(invite)}
                   >
                     拒绝
                   </Button>

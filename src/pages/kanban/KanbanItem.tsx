@@ -94,21 +94,29 @@ export default function KanbanItem({
       }
 
       try {
-        // 查找成员信息
-        const member = await db.members
+        // 查找成员信息，支持 userId 和 email 匹配
+        let member = await db.members
           .where('userId')
           .equals(task.assignee)
           .first()
 
+        // 如果通过 userId 找不到，尝试通过 email 查找
+        if (!member) {
+          member = await db.members
+            .where('email')
+            .equals(task.assignee)
+            .first()
+        }
+
         if (member) {
           setAssigneeName(member.name || member.email || '未命名')
-        } else {
-          // 可能是项目所有者
-          setAssigneeName('项目所有者')
+        } else if (task.assignee) {
+          // 可能是项目所有者或直接存储的 email
+          setAssigneeName(task.assignee)
         }
       } catch (error) {
         console.error('获取负责人信息失败:', error)
-        setAssigneeName('')
+        setAssigneeName(task.assignee || '')
       }
     }
 

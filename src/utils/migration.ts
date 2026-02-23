@@ -1,5 +1,7 @@
 import db from '@/utils/db'
 import { RoleService } from '@/services/roleService'
+import { ProjectService } from '@/services/projectService'
+import { MemberService } from '@/services/memberService'
 
 /**
  * 数据迁移工具
@@ -103,6 +105,16 @@ export class DataMigration {
       .count()
     return existingProjects === 0
   }
+
+  /**
+   * 为所有项目添加角色权限定义
+   * 用于修复旧数据
+   */
+  static async migrateProjectRoles(): Promise<void> {
+    console.log('[migrateProjectRoles] 开始角色权限迁移...')
+    await ProjectService.migrateAllProjectRoles()
+    console.log('[migrateProjectRoles] 角色权限迁移完成')
+  }
 }
 
 /**
@@ -113,4 +125,10 @@ export async function runMigrationIfNeeded(): Promise<void> {
   if (needsMigration) {
     await DataMigration.migrateToProjectBased()
   }
+
+  // 始终检查并迁移角色权限（用于修复旧数据）
+  await DataMigration.migrateProjectRoles()
+
+  // 迁移成员权限
+  await MemberService.migrateMemberPermissions()
 }

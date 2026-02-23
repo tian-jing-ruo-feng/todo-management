@@ -145,11 +145,16 @@ export default function MemberManagement({ projectId }: MemberManagementProps) {
       title: '状态',
       dataIndex: 'invite',
       key: 'invite',
-      render: (invite: DBRealmMember['invite']) => {
-        if (!invite) {
+      render: (invite: DBRealmMember['invite'], record: DBRealmMember) => {
+        // 如果有 accepted 字段或 userId 存在且没有 invite 标记，表示已加入
+        if (record.accepted || (record.userId && !invite)) {
           return <Tag color="green">已加入</Tag>
         }
-        return <Tag color="orange">待接受</Tag>
+        // 如果有 invite 标记但没有 accepted，表示待接受
+        if (invite) {
+          return <Tag color="orange">待接受</Tag>
+        }
+        return <Tag color="green">已加入</Tag>
       },
     },
     {
@@ -201,13 +206,18 @@ export default function MemberManagement({ projectId }: MemberManagementProps) {
     )
   }
 
+  // 过滤掉项目所有者，避免重复显示
+  const filteredMembers = members?.filter(
+    (member) => member.userId !== project?.owner
+  )
+
   return (
     <div className="flex flex-col gap-4">
       {permission?.canManageMembers && (
         <div className="flex justify-between items-center">
           <div className="flex items-center gap-2 text-gray-600">
             <TeamOutlined />
-            <span>共 {members.length + 1} 人</span>
+            <span>共 {(filteredMembers?.length || 0) + 1} 人</span>
           </div>
           <Button
             type="primary"
@@ -223,14 +233,16 @@ export default function MemberManagement({ projectId }: MemberManagementProps) {
       <Table
         dataSource={[
           {
-            id: project?.owner,
+            id: project?.owner || 'owner',
             userId: project?.owner,
             name: user?.name || '项目所有者',
             email: user?.email || '',
             roles: ['admin'],
             invite: undefined,
+            realmId: project?.realmId || '',
+            owner: project?.owner || '',
           },
-          ...members,
+          ...(filteredMembers || []),
         ]}
         columns={columns}
         rowKey="id"

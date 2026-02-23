@@ -37,18 +37,22 @@ export default function MemberSelector({
     const owner = await db.projects.get(projectId)
 
     // 合并成员和所有者
+    console.log(projectMembers, '<<<<<< projectMembers')
     const allMembers = [
       {
         id: owner?.owner || '',
         name: '项目所有者',
         email: owner?.owner,
         isOwner: true,
+        hasUserId: true,
       },
       ...projectMembers.map((m) => ({
+        // 优先使用 userId，其次 email
         id: m.userId || m.email || '',
-        name: m.name || m.email || '未命名成员',
+        name: m.name || m.email || m.userId || '未命名成员',
         email: m.email,
         isOwner: false,
+        hasUserId: !!m.userId,
       })),
     ]
 

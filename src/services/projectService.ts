@@ -23,15 +23,29 @@ export class ProjectService {
 
   /**
    * 获取用户参与的所有项目
+   * 同时支持通过 userId 和 email 查询成员关系
    */
-  static async getUserProjects(userId: string): Promise<Project[]> {
-    console.log('[getUserProjects] 开始查询, userId:', userId)
+  static async getUserProjects(
+    userId: string,
+    userEmail?: string
+  ): Promise<Project[]> {
+    console.log(
+      '[getUserProjects] 开始查询, userId:',
+      userId,
+      'email:',
+      userEmail
+    )
 
     // 先检查所有项目的 owner
     const allProjectsInDb = await db.projects.toArray()
     console.log(
       '[getUserProjects] 数据库中所有项目:',
-      allProjectsInDb.map((p) => ({ id: p.id, name: p.name, owner: p.owner }))
+      allProjectsInDb.map((p) => ({
+        id: p.id,
+        name: p.name,
+        owner: p.owner,
+        realmId: p.realmId,
+      }))
     )
 
     // 获取用户作为所有者的项目
@@ -41,13 +55,41 @@ export class ProjectService {
       .toArray()
     console.log('[getUserProjects] ownedProjects:', ownedProjects.length)
 
-    // 获取用户作为成员的项目
-    const memberships = await db.members
+    // 获取用户作为成员的项目 - 同时支持 userId 和 email 查询
+    const membershipsByUserId = await db.members
       .where('userId')
       .equals(userId)
       .toArray()
-    console.log('[getUserProjects] memberships:', memberships.length)
+
+    // 如果提供了 email，也通过 email 查询（处理邀请接受后 userId 还未同步的情况）
+    let membershipsByEmail: typeof membershipsByUserId = []
+    if (userEmail) {
+      membershipsByEmail = await db.members
+        .where('email')
+        .equals(userEmail)
+        .toArray()
+    }
+
+    // 合并成员记录，去重
+    const membershipsMap = new Map()
+    ;[...membershipsByUserId, ...membershipsByEmail].forEach((m) => {
+      membershipsMap.set(m.id, m)
+    })
+    const memberships = Array.from(membershipsMap.values())
+
+    console.log(
+      '[getUserProjects] memberships:',
+      memberships.length,
+      memberships.map((m) => ({
+        id: m.id,
+        userId: m.userId,
+        email: m.email,
+        realmId: m.realmId,
+        invite: m.invite,
+      }))
+    )
     const memberRealmIds = memberships.map((m) => m.realmId)
+    console.log('[getUserProjects] memberRealmIds:', memberRealmIds)
 
     const memberProjects =
       memberRealmIds.length > 0
@@ -99,6 +141,7 @@ export class ProjectService {
         db.groups,
         db.members,
         db.realms,
+        db.roles,
       ],
       async () => {
         // 创建 realm 记录，Dexie Cloud 需要这个来管理权限
@@ -106,6 +149,41 @@ export class ProjectService {
           realmId,
           name,
           owner: currentUserId,
+        })
+
+        // 创建角色权限定义 - Dexie Cloud 权限控制的核心
+        // owner: 项目所有者，完全权限
+        await db.roles.add({
+          realmId,
+          name: 'owner',
+          owner: currentUserId,
+          permissions: {
+            manage: '*', // 完全管理权限
+          },
+        })
+
+        // admin: 管理员，可以管理所有数据
+        await db.roles.add({
+          realmId,
+          name: 'admin',
+          owner: currentUserId,
+          permissions: {
+            manage: '*', // 完全管理权限
+          },
+        })
+
+        // member: 成员，可以添加和更新任务
+        await db.roles.add({
+          realmId,
+          name: 'member',
+          owner: currentUserId,
+          permissions: {
+            add: ['tasks', 'comments'], // 可以添加任务和评论
+            update: {
+              tasks: '*', // 可以更新任务的所有字段
+              comments: '*', // 可以更新评论
+            },
+          },
         })
 
         // 创建项目 - 使用独立的 realmId，创建独立的项目权限域
@@ -188,6 +266,9 @@ export class ProjectService {
           realmId,
           owner: currentUserId,
           roles: ['owner'], // 使用 owner 角色表示项目所有者
+          permissions: {
+            manage: '*', // 完全管理权限
+          },
         })
       }
     )
@@ -274,6 +355,80 @@ export class ProjectService {
   }
 
   /**
+   * 为已存在的项目添加角色权限定义
+   * 用于修复旧数据
+   */
+  static async ensureProjectRoles(realmId: string): Promise<void> {
+    // 检查是否已有角色定义
+    const existingRoles = await db.roles
+      .where('realmId')
+      .equals(realmId)
+      .toArray()
+    if (existingRoles.length > 0) {
+      console.log('[ensureProjectRoles] 角色已存在，跳过')
+      return
+    }
+
+    console.log('[ensureProjectRoles] 为 realm 添加角色:', realmId)
+
+    // 获取 realm 的 owner
+    const realm = await db.realms.get(realmId)
+    const owner = realm?.owner || db.cloud.currentUser.value?.userId || ''
+
+    // 添加角色权限定义
+    await db.roles.bulkAdd([
+      {
+        realmId,
+        name: 'owner',
+        owner,
+        permissions: {
+          manage: '*',
+        },
+      },
+      {
+        realmId,
+        name: 'admin',
+        owner,
+        permissions: {
+          manage: '*',
+        },
+      },
+      {
+        realmId,
+        name: 'member',
+        owner,
+        permissions: {
+          add: ['tasks', 'comments'],
+          update: {
+            tasks: '*',
+            comments: '*',
+          },
+        },
+      },
+    ])
+
+    // 触发同步
+    await db.cloud.sync()
+    console.log('[ensureProjectRoles] 角色添加完成')
+  }
+
+  /**
+   * 为所有已存在的项目添加角色权限定义
+   */
+  static async migrateAllProjectRoles(): Promise<void> {
+    console.log('[migrateAllProjectRoles] 开始迁移...')
+
+    const projects = await db.projects.toArray()
+    for (const project of projects) {
+      if (project.realmId) {
+        await this.ensureProjectRoles(project.realmId)
+      }
+    }
+
+    console.log('[migrateAllProjectRoles] 迁移完成')
+  }
+
+  /**
    * 获取项目详情
    */
   static async getProject(projectId: string): Promise<Project | undefined> {
@@ -327,25 +482,27 @@ export class ProjectService {
  * Hook: 获取当前用户的所有项目
  */
 export function useProjects() {
-  const { isLoggedIn: userLoggedIn, userId } = useUser()
+  const { isLoggedIn: userLoggedIn, userId, email } = useUser()
 
-  console.log('[useProjects] 状态:', { userLoggedIn, userId })
+  console.log('[useProjects] 状态:', { userLoggedIn, userId, email })
 
   return useLiveQuery(async () => {
     console.log(
       '[useProjects] 查询执行, userLoggedIn:',
       userLoggedIn,
       'userId:',
-      userId
+      userId,
+      'email:',
+      email
     )
     if (!userLoggedIn || !userId) {
       console.log('[useProjects] 条件不满足，返回空数组')
       return []
     }
-    const projects = await ProjectService.getUserProjects(userId)
+    const projects = await ProjectService.getUserProjects(userId, email)
     console.log('[useProjects] 查询结果:', projects.length, '个项目')
     return projects
-  }, [userLoggedIn, userId])
+  }, [userLoggedIn, userId, email])
 }
 
 /**

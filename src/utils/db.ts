@@ -31,12 +31,33 @@ export const saveTask = async (task: Task): Promise<string> => {
     await db.tasks.update(task.id, updateData as any)
     return task.id
   } else {
-    // 添加时加密敏感字段
-    const newTaskData = ENCRYPTION_KEY
-      ? encryptTaskFields(task, ENCRYPTION_KEY)
-      : task
-    await db.tasks.add(newTaskData)
-    return newTaskData.id
+    // 添加新任务时，需要填充 realmId 和 owner
+    const newTaskData = { ...task }
+
+    // 如果任务没有 realmId，从项目获取
+    if (!newTaskData.realmId && newTaskData.projectId) {
+      const project = await db.projects.get(newTaskData.projectId)
+      if (project) {
+        newTaskData.realmId = project.realmId
+        // 如果任务没有 owner，使用项目的 owner 或当前用户
+        if (!newTaskData.owner) {
+          newTaskData.owner =
+            project.owner || db.cloud.currentUser.value?.userId
+        }
+      }
+    }
+
+    // 如果还是没有 owner，使用当前用户
+    if (!newTaskData.owner) {
+      newTaskData.owner = db.cloud.currentUser.value?.userId
+    }
+
+    // 加密敏感字段
+    const encryptedTaskData = ENCRYPTION_KEY
+      ? encryptTaskFields(newTaskData, ENCRYPTION_KEY)
+      : newTaskData
+    await db.tasks.add(encryptedTaskData)
+    return encryptedTaskData.id
   }
 }
 
@@ -86,10 +107,35 @@ export const getTasksByStatus = async (status: string): Promise<Task[]> => {
  * @param tasks 任务数组
  */
 export const bulkAddTasks = async (tasks: Task[]): Promise<void> => {
+  // 为每个任务填充 realmId 和 owner
+  const tasksWithRealm = await Promise.all(
+    tasks.map(async (task) => {
+      const newTask = { ...task }
+
+      // 如果任务没有 realmId，从项目获取
+      if (!newTask.realmId && newTask.projectId) {
+        const project = await db.projects.get(newTask.projectId)
+        if (project) {
+          newTask.realmId = project.realmId
+          if (!newTask.owner) {
+            newTask.owner = project.owner || db.cloud.currentUser.value?.userId
+          }
+        }
+      }
+
+      // 如果还是没有 owner，使用当前用户
+      if (!newTask.owner) {
+        newTask.owner = db.cloud.currentUser.value?.userId
+      }
+
+      return newTask
+    })
+  )
+
   // 加密敏感字段
   const encryptedTasks = ENCRYPTION_KEY
-    ? encryptTasks(tasks, ENCRYPTION_KEY)
-    : tasks
+    ? encryptTasks(tasksWithRealm, ENCRYPTION_KEY)
+    : tasksWithRealm
   await db.tasks.bulkAdd(encryptedTasks)
 }
 

@@ -40,7 +40,8 @@ export class ToDoDb extends Dexie {
       priorities: 'id, name, projectId',
       groups: 'id, name, projectId',
       // Dexie Cloud 内置表的索引定义
-      members: '@id, [userId+realmId], [email+realmId], realmId',
+      // 添加 email 单独索引，支持通过邮箱查询邀请
+      members: '@id, [userId+realmId], [email+realmId], email, realmId',
       roles: '[realmId+name]',
       realms: '@realmId', // realmId 作为主键
     })
@@ -104,5 +105,10 @@ export class ToDoDb extends Dexie {
 }
 
 const db = new ToDoDb()
+
+// 开发环境将 db 挂载到全局对象，方便控制台调试
+if (import.meta.env.DEV) {
+  ;(window as any).db = db
+}
 
 export default db

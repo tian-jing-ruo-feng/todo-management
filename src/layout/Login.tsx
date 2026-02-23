@@ -73,12 +73,15 @@ export function MyLoginGUI(props: {
         otpId: emailSendResult.otp_id.toString(),
         grant_type: 'otp',
       })
-      .then(() => {
+      .then(async () => {
         message.success('登录成功')
+        // 登录成功后立即同步，确保获取最新的邀请信息
+        try {
+          await db.cloud.sync()
+        } catch (e) {
+          console.error('同步失败:', e)
+        }
         onLoginSuccess()
-        // setTimeout(() => {
-        //   window.location.reload()
-        // }, 300)
       })
       .catch((error) => {
         message.error('登录失败')
