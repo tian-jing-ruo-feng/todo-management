@@ -57,6 +57,11 @@ export class ToDoDb extends Dexie {
       customLoginGui: true,
     })
 
+    // 监听同步状态，帮助诊断权限问题
+    this.cloud.syncState.subscribe((state) => {
+      console.log('[Dexie Cloud 同步状态]:', state)
+    })
+
     // 初始化时检查并恢复登录状态
     this.initializeAuthState()
 
@@ -108,7 +113,21 @@ const db = new ToDoDb()
 
 // 开发环境将 db 挂载到全局对象，方便控制台调试
 if (import.meta.env.DEV) {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   ;(window as any).db = db
+
+  // 动态导入 MemberService 用于诊断
+  import('@/services/memberService').then(({ MemberService }) => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    ;(window as any).MemberService = MemberService
+    console.log('🔧 调试工具已加载:')
+    console.log('  - window.db: 数据库实例')
+    console.log('  - window.MemberService: 成员服务')
+    console.log('使用示例:')
+    console.log('  - await MemberService.verifyMemberPermissions("memberId")')
+    console.log('  - await MemberService.diagnoseTaskPermission("taskId")')
+    console.log('  - await MemberService.migrateMemberPermissions()')
+  })
 }
 
 export default db
