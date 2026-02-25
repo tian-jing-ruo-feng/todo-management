@@ -5,10 +5,10 @@ import { useObservable } from 'dexie-react-hooks'
 
 /**
  * 角色权限映射
- * 由于 Dexie Cloud 角色需要通过 CLI 导入，我们直接在成员记录中设置权限
- *
- * 注意：为了确保成员能够编辑任务，我们给予所有角色完全管理权限
- * 后续可以根据需要细化权限控制
+ * Dexie Cloud 权限控制：
+ * - manage: 完全管理权限，可以编辑领域内任何数据
+ * - update: 只能编辑自己是 owner 的数据
+ * - add: 可以创建新数据
  */
 const ROLE_PERMISSIONS: Record<string, DBRealmMember['permissions']> = {
   owner: {
@@ -22,9 +22,11 @@ const ROLE_PERMISSIONS: Record<string, DBRealmMember['permissions']> = {
     manage: '*', // 完全管理权限
   },
   member: {
-    add: '*',
-    update: '*',
-    manage: '*', // 完全管理权限（暂时给予完全权限，确保可以编辑任务）
+    add: ['tasks'], // 可以创建任务
+    update: {
+      tasks: ['name', 'description', 'status', 'priority', 'groupId', 'assignee', 'dueDate', 'tags'], // 只能更新自己拥有的任务
+    },
+    // 注意：不授予 manage 权限，成员只能编辑 owner 是自己的任务
   },
   guest: {
     // 访客只有查看权限，无编辑权限

@@ -94,8 +94,22 @@ export function useDefaultRoles() {
       {
         id: 'member',
         name: '成员',
-        description: '成员，可以创建和编辑任务',
-        permissions: { add: '*', update: '*', manage: '*' } as DBPermissionSet,
+        description: '成员，可以创建任务，只能编辑分配给自己的任务',
+        permissions: {
+          add: ['tasks'], // 可以创建任务
+          update: {
+            tasks: [
+              'name',
+              'description',
+              'status',
+              'priority',
+              'groupId',
+              'assignee',
+              'dueDate',
+              'tags',
+            ], // 可更新的任务字段
+          },
+        } as DBPermissionSet,
       },
       {
         id: 'guest',
