@@ -20,26 +20,25 @@ const {
 type ViewType = 'tasks' | 'projects' | 'project-detail'
 
 export default function PageLayout() {
-  const [isLogin, setIsLogin] = useState(false)
   const [initComplete, setInitComplete] = useState(false)
   const [currentProjectId, setCurrentProjectId] = useState<string>()
   const [currentView, setCurrentView] = useState<ViewType>('tasks')
-  const { isLoggedIn: userLoggedIn, isLoading } = useUser()
+  const [manualLogin, setManualLogin] = useState(false)
+  const { isLoggedIn: userLoggedIn, isLoading, isRestoring } = useUser()
 
-  const login = () => {
-    setIsLogin(true)
+  // 派生状态：判断是否应该显示登录框
+  // 条件1：用户手动点击登录按钮
+  // 条件2：未登录且不在加载/恢复状态（自动触发）
+  const shouldShowLogin =
+    manualLogin || (!isLoading && !isRestoring && !userLoggedIn)
+
+  const handleLogin = () => {
+    setManualLogin(true)
   }
 
   const handleClose = () => {
-    setIsLogin(false)
+    setManualLogin(false)
   }
-
-  // 未登录状态下自动弹出登录框
-  useEffect(() => {
-    if (!isLoading && !userLoggedIn) {
-      setIsLogin(true)
-    }
-  }, [isLoading, userLoggedIn])
 
   // 用户登录后初始化配置数据
   useEffect(() => {
@@ -115,7 +114,7 @@ export default function PageLayout() {
             </div>
             <div className="flex items-center gap-3">
               {userLoggedIn && <InviteNotification />}
-              <UserInfo login={login} />
+              <UserInfo onLogin={handleLogin} />
             </div>
           </div>
         </div>
@@ -123,7 +122,7 @@ export default function PageLayout() {
       <Content className="flex-1 overflow-y-auto">{renderContent()}</Content>
       {/* <Footer className="text-center bg-black!">Footer</Footer> */}
       <MyLoginGUI
-        isLogin={isLogin}
+        isLogin={shouldShowLogin}
         onLoginSuccess={handleClose}
         onClose={handleClose}
       />

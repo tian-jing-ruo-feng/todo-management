@@ -7,8 +7,8 @@ import { useState } from 'react'
 import ProfileModal from '@/components/ProfileModal'
 import { useLiveQuery } from 'dexie-react-hooks'
 
-export default function UserInfo(props: { login: () => void }) {
-  const { login } = props
+export default function UserInfo(props: { onLogin: () => void }) {
+  const { onLogin } = props
   const { user, isLoggedIn: userLoggedIn, isLoading } = useUser()
   const [profileModalVisible, setProfileModalVisible] = useState(false)
 
@@ -83,7 +83,7 @@ export default function UserInfo(props: { login: () => void }) {
             </h2>
           </Dropdown>
         ) : (
-          <Button type="primary" onClick={login}>
+          <Button type="primary" onClick={onLogin}>
             登录
           </Button>
         )}
