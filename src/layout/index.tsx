@@ -110,9 +110,6 @@ export default function PageLayout() {
                   onProjectChange={setCurrentProjectId}
                 />
               )}
-              {userLoggedIn && currentView === 'project-detail' && (
-                <div className="text-white font-bold text-lg">项目详情</div>
-              )}
             </div>
             <div className="flex items-center gap-3">
               {userLoggedIn && <InviteNotification />}
