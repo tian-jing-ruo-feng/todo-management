@@ -21,10 +21,11 @@ import {
   UploadOutlined,
 } from '@ant-design/icons'
 import { arrayMove } from '@dnd-kit/sortable'
-import { Button, Card, Empty, Spin, Upload, message } from 'antd'
+import { Alert, Button, Card, Empty, Spin, Upload, message } from 'antd'
 import dayjs from 'dayjs'
 import React, { useEffect, useState } from 'react'
 import { downloadFile } from '../../utils/common'
+import { useProjectPermission } from '@/services/projectService'
 import ConfigForm from './ConfigForm'
 import ConfigList from './ConfigList'
 import ConfigTabs from './ConfigTabs'
@@ -39,6 +40,10 @@ export default function ConfigPage({ projectId }: ConfigPageProps) {
   const [activeKey, setActiveKey] = useState<string>(ConfigType.Status)
   const [data, setData] = useState<ConfigItem[]>([])
   const [loading, setLoading] = useState(false)
+
+  // 权限检查
+  const permission = useProjectPermission(projectId)
+  const canManage = permission?.isOwner || permission?.role === 'admin'
 
   // 分页状态
   const [currentPage, setCurrentPage] = useState(1)
@@ -383,6 +388,16 @@ export default function ConfigPage({ projectId }: ConfigPageProps) {
 
   return (
     <div className="flex flex-col flex-1 gap-4 size-full overflow-hidden">
+      {/* 无权限提示 */}
+      {!canManage && (
+        <Alert
+          message="权限提示"
+          description="您当前是项目成员，只能查看配置。只有项目创建者和管理员可以进行配置管理操作。"
+          type="info"
+          showIcon
+        />
+      )}
+
       <Card classNames={{ body: 'p-3!' }}>
         <div className="flex justify-between items-center">
           <ConfigTabs activeKey={activeKey} onChange={handleTabChange} />
@@ -392,10 +407,14 @@ export default function ConfigPage({ projectId }: ConfigPageProps) {
               showUploadList={false}
               beforeUpload={beforeUpload}
               customRequest={({ file }) => handleImport(file as File)}
-              disabled={uploading}
+              disabled={uploading || !canManage}
               maxCount={1}
             >
-              <Button icon={<UploadOutlined />} loading={uploading}>
+              <Button
+                icon={<UploadOutlined />}
+                loading={uploading}
+                disabled={!canManage}
+              >
                 导入JSON
               </Button>
             </Upload>
@@ -404,10 +423,16 @@ export default function ConfigPage({ projectId }: ConfigPageProps) {
               icon={<DownloadOutlined />}
               loading={isExporting}
               onClick={handleExport}
+              disabled={!canManage}
             >
               导出JSON
             </Button>
-            <Button type="primary" icon={<PlusOutlined />} onClick={handleAdd}>
+            <Button
+              type="primary"
+              icon={<PlusOutlined />}
+              onClick={handleAdd}
+              disabled={!canManage}
+            >
               新增配置
             </Button>
           </div>
@@ -431,6 +456,7 @@ export default function ConfigPage({ projectId }: ConfigPageProps) {
             <ConfigList
               data={data}
               tagIcon={tagIcon}
+              canManage={canManage}
               currentPage={currentPage}
               pageSize={pageSize}
               onPageChange={handlePageChange}

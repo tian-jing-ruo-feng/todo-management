@@ -19,6 +19,7 @@ export interface ConfigListProps {
   data: ConfigItem[]
   loading?: boolean
   tagIcon?: React.ReactNode
+  canManage?: boolean
   onEdit: (item: ConfigItem) => void
   onDelete: (item: ConfigItem) => void
   currentPage: number
@@ -35,6 +36,7 @@ export default function ConfigList({
   data,
   loading,
   tagIcon,
+  canManage = true,
   onEdit,
   onDelete,
   currentPage,
@@ -52,13 +54,14 @@ export default function ConfigList({
       isDragging,
     } = useSortable({
       id: props['data-row-key'],
+      disabled: !canManage,
     })
 
     const style: React.CSSProperties = {
       ...props.style,
       transform: CSS.Translate.toString(transform),
       transition,
-      cursor: 'move',
+      ...(canManage ? { cursor: 'move' } : {}),
       ...(isDragging ? { position: 'relative', zIndex: 9999 } : {}),
     }
 
@@ -67,8 +70,8 @@ export default function ConfigList({
         {...props}
         ref={setNodeRef}
         style={style}
-        {...attributes}
-        {...listeners}
+        {...(canManage ? attributes : {})}
+        {...(canManage ? listeners : {})}
       />
     )
   }
@@ -111,21 +114,24 @@ export default function ConfigList({
       key: 'action',
       width: 200,
       fixed: 'right',
-      render: (_, record) => (
-        <Space size="small">
-          <Button type="link" size="small" onClick={() => onEdit(record)}>
-            编辑
-          </Button>
-          <Button
-            type="link"
-            size="small"
-            danger
-            onClick={() => onDelete(record)}
-          >
-            删除
-          </Button>
-        </Space>
-      ),
+      render: (_, record) =>
+        canManage ? (
+          <Space size="small">
+            <Button type="link" size="small" onClick={() => onEdit(record)}>
+              编辑
+            </Button>
+            <Button
+              type="link"
+              size="small"
+              danger
+              onClick={() => onDelete(record)}
+            >
+              删除
+            </Button>
+          </Space>
+        ) : (
+          <span className="text-gray-400 text-sm">无权限</span>
+        ),
     },
   ]
   const sensors = useSensors(
