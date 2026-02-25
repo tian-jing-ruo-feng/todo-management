@@ -115,7 +115,6 @@ if (import.meta.env.DEV) {
     console.log('使用示例:')
     console.log('  - await MemberService.verifyMemberPermissions("memberId")')
     console.log('  - await MemberService.diagnoseTaskPermission("taskId")')
-    console.log('  - await MemberService.migrateMemberPermissions()')
   })
 }
 

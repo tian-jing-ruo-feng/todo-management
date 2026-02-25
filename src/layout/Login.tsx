@@ -1,6 +1,7 @@
 import { Button, Form, Input, Modal, message } from 'antd'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import db from '@/db/db'
+import type { DXCUserInteraction } from 'dexie-cloud-addon'
 
 type FieldType = {
   email?: string
@@ -29,6 +30,61 @@ export function MyLoginGUI(props: {
     otp_id: 0,
     type: '',
   })
+
+  /**
+   * 根本原因：customLoginGui: true 模式下，Dexie Cloud 错误不是通过 Promise reject 抛出，而是通过 db.cloud.userInteraction Observable 传递。
+
+
+  处理 message-alert 类型（错误消息）
+  根据错误类型显示 error/warning/info 提示
+  处理其他交互类型（otp/email）
+  简化 handleSubmit：
+
+  移除复杂的错误类型判断
+  保留 catch 作为兜底处理
+   */
+
+  // 订阅 userInteraction 处理错误和交互请求
+  useEffect(() => {
+    const subscription = db.cloud.userInteraction.subscribe(
+      (interaction: DXCUserInteraction | undefined) => {
+        if (!interaction) return
+
+        console.log('[Login] userInteraction:', interaction)
+
+        // 处理消息警告类型（包含错误信息）
+        if (interaction.type === 'message-alert') {
+          const alerts = interaction.alerts || []
+          alerts.forEach((alert) => {
+            if (alert.type === 'error') {
+              message.error(alert.message)
+            } else if (alert.type === 'warning') {
+              message.warning(alert.message)
+            } else {
+              message.info(alert.message)
+            }
+          })
+          // 关闭交互
+          interaction.onSubmit({})
+          setIsLogining(false)
+          return
+        }
+
+        // 其他交互类型（OTP、email 等）在自定义登录场景下不处理
+        // 因为我们有自己的登录 UI
+        if (interaction.type === 'otp' || interaction.type === 'email') {
+          // 用户已取消内置交互，使用我们的自定义 UI
+          interaction.onCancel()
+          return
+        }
+
+        // 默认处理：关闭交互
+        interaction.onSubmit({})
+      }
+    )
+
+    return () => subscription.unsubscribe()
+  }, [])
 
   const handleSendEmail = async () => {
     const url = db.cloud.options?.databaseUrl
@@ -66,31 +122,27 @@ export function MyLoginGUI(props: {
       return
     }
     setIsLogining(true)
-    db.cloud
-      .login({
+    try {
+      await db.cloud.login({
         email: form.getFieldValue('email'),
         otp: form.getFieldValue('otp'),
         otpId: emailSendResult.otp_id.toString(),
         grant_type: 'otp',
       })
-      .then(async () => {
-        message.success('登录成功')
-        // 登录成功后立即同步，确保获取最新的邀请信息
-        try {
-          await db.cloud.sync()
-        } catch (e) {
-          console.error('同步失败:', e)
-        }
-        onLoginSuccess()
-      })
-      .catch((error) => {
-        message.error('登录失败')
-        setIsLogining(false)
-        console.error('登录失败:', error)
-      })
-      .finally(() => {
-        setIsLogining(false)
-      })
+      message.success('登录成功')
+      // 登录成功后立即同步，确保获取最新的邀请信息
+      try {
+        await db.cloud.sync()
+      } catch (e) {
+        console.error('同步失败:', e)
+      }
+      onLoginSuccess()
+    } catch (error: unknown) {
+      // 兜底处理：虽然 customLoginGui 模式下错误主要通过 userInteraction 传递
+      // 但仍保留 catch 作为备用
+      console.error('登录失败:', error)
+      setIsLogining(false)
+    }
   }
 
   const handelOnClose = () => {

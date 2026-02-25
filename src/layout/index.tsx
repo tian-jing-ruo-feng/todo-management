@@ -1,6 +1,5 @@
 import { Layout, message } from 'antd'
 import { useEffect, useState } from 'react'
-import { runMigrationIfNeeded } from '@/utils/migration'
 import { initConfigData } from '@/utils/initConfigData'
 import { useUser } from '@/hooks/useUser'
 import Tasks from '../pages/tasks'
@@ -22,7 +21,7 @@ type ViewType = 'tasks' | 'projects' | 'project-detail'
 
 export default function PageLayout() {
   const [isLogin, setIsLogin] = useState(false)
-  const [migrationComplete, setMigrationComplete] = useState(false)
+  const [initComplete, setInitComplete] = useState(false)
   const [currentProjectId, setCurrentProjectId] = useState<string>()
   const [currentView, setCurrentView] = useState<ViewType>('tasks')
   const { isLoggedIn: userLoggedIn } = useUser()
@@ -35,21 +34,17 @@ export default function PageLayout() {
     setIsLogin(false)
   }
 
-  // 用户登录后执行数据迁移
+  // 用户登录后初始化配置数据
   useEffect(() => {
-    if (userLoggedIn && !migrationComplete) {
-      // 先初始化配置数据
+    if (userLoggedIn && !initComplete) {
       initConfigData()
-        .then(() => runMigrationIfNeeded())
-        .then(() => {
-          setMigrationComplete(true)
-        })
+        .then(() => setInitComplete(true))
         .catch((error) => {
-          console.error('数据初始化/迁移失败:', error)
+          console.error('数据初始化失败:', error)
           message.error('数据初始化失败，请刷新页面重试')
         })
     }
-  }, [userLoggedIn, migrationComplete])
+  }, [userLoggedIn, initComplete])
 
   const handleTabChange = (item: ButtonItem) => {
     if (item.key === 'projects') {

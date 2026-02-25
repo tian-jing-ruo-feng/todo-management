@@ -385,18 +385,6 @@ export class ProjectService {
   }
 
   /**
-   * 为所有已存在的项目添加角色权限定义
-   */
-  static async migrateAllProjectRoles(): Promise<void> {
-    const projects = await db.projects.toArray()
-    for (const project of projects) {
-      if (project.realmId) {
-        await this.ensureProjectRoles(project.realmId)
-      }
-    }
-  }
-
-  /**
    * 获取项目详情
    */
   static async getProject(projectId: string): Promise<Project | undefined> {

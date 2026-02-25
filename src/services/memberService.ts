@@ -198,32 +198,6 @@ export class MemberService {
   }
 
   /**
-   * 为所有成员添加权限
-   * 用于迁移旧数据
-   */
-  static async migrateMemberPermissions(): Promise<void> {
-    const members = await db.members.toArray()
-
-    for (const member of members) {
-      const role = member.roles?.[0] || 'member'
-      const expectedPermissions =
-        ROLE_PERMISSIONS[role] || ROLE_PERMISSIONS['member']
-
-      // 检查权限是否需要更新
-      const needsUpdate =
-        !member.permissions ||
-        JSON.stringify(member.permissions) !==
-          JSON.stringify(expectedPermissions)
-
-      if (needsUpdate) {
-        await db.members.update(member.id, { permissions: expectedPermissions })
-      }
-    }
-
-    await db.cloud.sync()
-  }
-
-  /**
    * 验证成员权限是否生效
    * 用于调试权限问题
    */
