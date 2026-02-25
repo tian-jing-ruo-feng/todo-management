@@ -62,10 +62,8 @@ export default function TaskTable({
   }
 
   const rowSelection: TableProps<Task>['rowSelection'] = {
-    onChange: (selectedRowKeys, selectedRows) => {
-        'selectedRows:',
-        selectedRows
-      )
+    onChange: () => {
+      // 处理行选择变化
     },
     getCheckboxProps: (record) => ({
       disabled: record.name === 'Disabled User', // Column configuration not to be checked
