@@ -218,17 +218,9 @@ export class ProjectService {
           },
         ])
 
-        // 创建项目成员记录，将创建者添加为项目管理员
-        await db.members.add({
-          id: `mmb_${projectId}_${currentUserId}`, // Dexie Cloud members 表主键需要 "mmb" 前缀
-          userId: currentUserId,
-          realmId,
-          owner: currentUserId,
-          roles: ['owner'], // 使用 owner 角色表示项目所有者
-          permissions: {
-            manage: '*', // 完全管理权限
-          },
-        })
+        // 注意：不需要手动创建成员记录
+        // Dexie Cloud 会自动为 realm owner 创建成员记录
+        // 项目所有者通过 project.owner 和 realm.owner 自动识别
       }
     )
 

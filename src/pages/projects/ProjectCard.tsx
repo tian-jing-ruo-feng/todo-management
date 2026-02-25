@@ -31,8 +31,15 @@ export default function ProjectCard({
       .where('realmId')
       .equals(project.realmId)
       .toArray()
-    return members.length + 1 // +1 是项目所有者
-  }, [project.realmId])
+
+    // 检查 owner 是否已在成员列表中
+    const ownerInMembers = members.some(
+      (m) => m.userId === project.owner || m.email === project.owner
+    )
+
+    // 如果 owner 不在成员列表中，需要额外计数
+    return ownerInMembers ? members.length : members.length + 1
+  }, [project.realmId, project.owner])
 
   // 获取项目任务数量
   const taskCount = useLiveQuery(async () => {
