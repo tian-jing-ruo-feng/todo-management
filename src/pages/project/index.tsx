@@ -152,7 +152,7 @@ export default function ProjectDetail({
         </span>
       ),
       children: (
-        <div className="flex-1 size-full flex flex-col overflow-hidden">
+        <div className="flex-1 size-full flex flex-col overflow-hidden gap-3 p-2">
           {showFilterForm && (
             <TaskFilterForm
               visible={showFilterForm}
