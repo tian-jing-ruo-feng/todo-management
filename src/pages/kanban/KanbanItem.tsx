@@ -17,6 +17,8 @@ import relativeTime from 'dayjs/plugin/relativeTime'
 import { useCallback, useEffect, useState } from 'react'
 import { useLiveQuery } from 'dexie-react-hooks'
 import db from '@/utils/db'
+import { useUser } from '@/hooks/useUser'
+import { useProjectPermission } from '@/services/projectService'
 
 // 配置 dayjs
 dayjs.extend(relativeTime)
@@ -35,6 +37,20 @@ export default function KanbanItem({
   onEdit,
   onDelete,
 }: KanbanItemProps) {
+  const { userId } = useUser()
+  const projectPermission = useProjectPermission(task.projectId)
+
+  // 检查是否可以拖动：负责人或管理员
+  const canDrag = (() => {
+    // 项目所有者可以拖动
+    if (projectPermission?.isOwner) return true
+    // 管理员可以拖动
+    if (projectPermission?.role === 'admin') return true
+    // 任务负责人可以拖动
+    if (task.assignee === userId || task.owner === userId) return true
+    return false
+  })()
+
   const {
     attributes,
     listeners,
@@ -42,7 +58,7 @@ export default function KanbanItem({
     transform,
     transition,
     isDragging: isSortableDragging,
-  } = useSortable({ id: task.id })
+  } = useSortable({ id: task.id, disabled: !canDrag })
   const [taskPriority, setTaskPriority] = useState<Priority | null | undefined>(
     null
   )
@@ -161,20 +177,25 @@ export default function KanbanItem({
   }, [])
 
   return (
-    <div
-      ref={!isOverlayDragging ? setNodeRef : undefined}
-      style={style}
-      {...(!isOverlayDragging && attributes)}
-      {...(!isOverlayDragging && listeners)}
-      className={`transition-all duration-200 ${
-        isOverlayDragging
-          ? 'cursor-grabbing'
-          : isSortableDragging
-            ? 'cursor-grabbing scale-105'
-            : 'cursor-grab hover:scale-[1.01]'
-      }`}
-      onClick={() => onEdit?.(task)}
+    <Tooltip
+      title={!canDrag ? '仅任务负责人或管理员可拖动' : ''}
     >
+      <div
+        ref={!isOverlayDragging ? setNodeRef : undefined}
+        style={style}
+        {...(!isOverlayDragging && attributes)}
+        {...(!isOverlayDragging && canDrag && listeners)}
+        className={`transition-all duration-200 ${
+          isOverlayDragging
+            ? 'cursor-grabbing'
+            : isSortableDragging
+              ? 'cursor-grabbing scale-105'
+              : canDrag
+                ? 'cursor-grab hover:scale-[1.01]'
+                : 'cursor-not-allowed'
+        }`}
+        onClick={() => onEdit?.(task)}
+      >
       <Card
         size="small"
         title={
@@ -263,5 +284,6 @@ export default function KanbanItem({
         </div>
       </Card>
     </div>
+    </Tooltip>
   )
 }
