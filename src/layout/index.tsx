@@ -59,10 +59,6 @@ export default function PageLayout() {
     }
   }
 
-  const handleManageProjects = () => {
-    setCurrentView('projects')
-  }
-
   const handleProjectSelect = (projectId: string) => {
     setCurrentProjectId(projectId)
     setCurrentView('tasks')
@@ -105,21 +101,23 @@ export default function PageLayout() {
     <Layout className="flex flex-col size-full">
       <Header className="bg-linear-[135deg,#6253e1,#04befe]!">
         <div className="flex justify-between items-center h-full leading-none">
-          <div className="flex items-center gap-4">
-            {userLoggedIn && currentView === 'tasks' && (
-              <ProjectSelector
-                currentProjectId={currentProjectId}
-                onProjectChange={setCurrentProjectId}
-                onManageProjects={handleManageProjects}
-              />
-            )}
-            {userLoggedIn && currentView === 'project-detail' && (
-              <div className="text-white font-bold text-lg">项目详情</div>
-            )}
-          </div>
-          <div className="flex items-center gap-3">
-            {userLoggedIn && <InviteNotification />}
-            <UserInfo login={login} />
+          <div className="font-bold text-2xl text-white">TaskFlow</div>
+          <div className="flex-1 flex justify-end">
+            <div className="flex items-center gap-4">
+              {userLoggedIn && currentView === 'project-detail' && (
+                <ProjectSelector
+                  currentProjectId={currentProjectId}
+                  onProjectChange={setCurrentProjectId}
+                />
+              )}
+              {userLoggedIn && currentView === 'project-detail' && (
+                <div className="text-white font-bold text-lg">项目详情</div>
+              )}
+            </div>
+            <div className="flex items-center gap-3">
+              {userLoggedIn && <InviteNotification />}
+              <UserInfo login={login} />
+            </div>
           </div>
         </div>
       </Header>

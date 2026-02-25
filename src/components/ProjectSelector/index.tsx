@@ -9,13 +9,11 @@ import { useUser } from '@/hooks/useUser'
 export interface ProjectSelectorProps {
   currentProjectId?: string
   onProjectChange?: (projectId: string) => void
-  onManageProjects?: () => void
 }
 
 export default function ProjectSelector({
   currentProjectId,
   onProjectChange,
-  onManageProjects,
 }: ProjectSelectorProps) {
   const projects = useProjects()
   const [loading, setLoading] = useState(false)
@@ -62,30 +60,10 @@ export default function ProjectSelector({
         </div>
       ),
     })) || []),
-    { type: 'divider' },
-    {
-      key: 'create',
-      label: (
-        <div className="flex items-center gap-2 text-blue-500">
-          <PlusOutlined />
-          <span>创建新项目</span>
-        </div>
-      ),
-    },
-    {
-      key: 'manage',
-      label: '管理所有项目',
-    },
   ]
 
   const handleMenuClick: MenuProps['onClick'] = (e) => {
-    if (e.key === 'create') {
-      onManageProjects?.()
-    } else if (e.key === 'manage') {
-      onManageProjects?.()
-    } else {
-      handleProjectSelect(e.key)
-    }
+    handleProjectSelect(e.key)
   }
 
   if (!userLoggedIn) {

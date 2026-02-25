@@ -62,7 +62,6 @@ export default function UserInfo(props: { login: () => void }) {
   if (isLoading) {
     return (
       <div className="flex justify-between items-center h-full leading-none">
-        <div className="font-bold text-2xl text-white">统一工作管理系统</div>
         <div className="flex items-center gap-4">
           <Spin size="small" />
         </div>
@@ -72,7 +71,6 @@ export default function UserInfo(props: { login: () => void }) {
 
   return (
     <div className="flex justify-between items-center h-full leading-none">
-      <div className="font-bold text-2xl text-white">统一工作管理系统</div>
       <div className="flex items-center gap-4">
         {userLoggedIn ? (
           <Dropdown
