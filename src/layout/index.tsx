@@ -24,7 +24,7 @@ export default function PageLayout() {
   const [initComplete, setInitComplete] = useState(false)
   const [currentProjectId, setCurrentProjectId] = useState<string>()
   const [currentView, setCurrentView] = useState<ViewType>('tasks')
-  const { isLoggedIn: userLoggedIn } = useUser()
+  const { isLoggedIn: userLoggedIn, isLoading } = useUser()
 
   const login = () => {
     setIsLogin(true)
@@ -33,6 +33,13 @@ export default function PageLayout() {
   const handleClose = () => {
     setIsLogin(false)
   }
+
+  // 未登录状态下自动弹出登录框
+  useEffect(() => {
+    if (!isLoading && !userLoggedIn) {
+      setIsLogin(true)
+    }
+  }, [isLoading, userLoggedIn])
 
   // 用户登录后初始化配置数据
   useEffect(() => {
