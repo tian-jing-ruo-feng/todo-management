@@ -15,6 +15,7 @@ import dayjs from 'dayjs'
 import 'dayjs/locale/zh-cn'
 import relativeTime from 'dayjs/plugin/relativeTime'
 import { useCallback, useEffect, useState } from 'react'
+import { useLiveQuery } from 'dexie-react-hooks'
 import db from '@/utils/db'
 
 // 配置 dayjs
@@ -46,7 +47,30 @@ export default function KanbanItem({
     null
   )
   const [groupList, setGroupList] = useState<Group[]>([])
-  const [assigneeName, setAssigneeName] = useState<string>('')
+
+  // 使用 useLiveQuery 响应式获取负责人名称
+  const assigneeName = useLiveQuery(async () => {
+    if (!task.assignee) return ''
+
+    try {
+      // 获取所有成员，然后过滤匹配负责人
+      const allMembers = await db.members.toArray()
+      const member = allMembers.find(
+        (m) => m.userId === task.assignee || m.email === task.assignee
+      )
+
+      if (member) {
+        return member.name || member.email || '未命名'
+      } else if (task.assignee) {
+        // 可能是项目所有者或直接存储的 email
+        return task.assignee
+      }
+      return ''
+    } catch (error) {
+      console.error('获取负责人信息失败:', error)
+      return task.assignee || ''
+    }
+  }, [task.assignee])
 
   // 如果是拖拽浮层中的组件，不需要使用dnd-kit的样式
   const style = isOverlayDragging
@@ -85,43 +109,6 @@ export default function KanbanItem({
     }
     fetchGroup()
   }, [])
-
-  useEffect(() => {
-    const fetchAssignee = async () => {
-      if (!task.assignee) {
-        setAssigneeName('')
-        return
-      }
-
-      try {
-        // 查找成员信息，支持 userId 和 email 匹配
-        let member = await db.members
-          .where('userId')
-          .equals(task.assignee)
-          .first()
-
-        // 如果通过 userId 找不到，尝试通过 email 查找
-        if (!member) {
-          member = await db.members
-            .where('email')
-            .equals(task.assignee)
-            .first()
-        }
-
-        if (member) {
-          setAssigneeName(member.name || member.email || '未命名')
-        } else if (task.assignee) {
-          // 可能是项目所有者或直接存储的 email
-          setAssigneeName(task.assignee)
-        }
-      } catch (error) {
-        console.error('获取负责人信息失败:', error)
-        setAssigneeName(task.assignee || '')
-      }
-    }
-
-    fetchAssignee()
-  }, [task.assignee])
 
   const getGroupById = (groupId: string) => {
     return groupList.find((group) => group.id === groupId)

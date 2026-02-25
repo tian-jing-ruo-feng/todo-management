@@ -33,26 +33,30 @@ export default function MemberSelector({
       .equals(project.realmId)
       .toArray()
 
-    // 获取项目所有者
-    const owner = await db.projects.get(projectId)
+    // 查找所有者在成员表中的记录
+    const ownerMember = projectMembers.find(
+      (m) => m.userId === project.owner || m.email === project.owner
+    )
 
     // 合并成员和所有者
     const allMembers = [
       {
-        id: owner?.owner || '',
-        name: '项目所有者',
-        email: owner?.owner,
+        id: project.owner || '',
+        name: ownerMember?.name || '项目所有者',
+        email: ownerMember?.email || project.owner,
         isOwner: true,
         hasUserId: true,
       },
-      ...projectMembers.map((m) => ({
-        // 优先使用 userId，其次 email
-        id: m.userId || m.email || '',
-        name: m.name || m.email || m.userId || '未命名成员',
-        email: m.email,
-        isOwner: false,
-        hasUserId: !!m.userId,
-      })),
+      ...projectMembers
+        .filter((m) => m.userId !== project.owner && m.email !== project.owner)
+        .map((m) => ({
+          // 优先使用 userId，其次 email
+          id: m.userId || m.email || '',
+          name: m.name || m.email || m.userId || '未命名成员',
+          email: m.email,
+          isOwner: false,
+          hasUserId: !!m.userId,
+        })),
     ]
 
     // 去重

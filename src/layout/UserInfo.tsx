@@ -1,12 +1,31 @@
 import { Button, Dropdown, message, Spin } from 'antd'
 import type { MenuProps } from 'antd'
-import { TeamOutlined, UserOutlined, LogoutOutlined } from '@ant-design/icons'
+import { UserOutlined, LogoutOutlined } from '@ant-design/icons'
 import db from '../utils/db'
 import { useUser } from '@/hooks/useUser'
+import { useState } from 'react'
+import ProfileModal from '@/components/ProfileModal'
+import { useLiveQuery } from 'dexie-react-hooks'
 
 export default function UserInfo(props: { login: () => void }) {
   const { login } = props
   const { user, isLoggedIn: userLoggedIn, isLoading } = useUser()
+  const [profileModalVisible, setProfileModalVisible] = useState(false)
+
+  // 从成员记录中获取用户别名（优先显示）
+  const memberName = useLiveQuery(async () => {
+    const currentUserId = db.cloud.currentUserId
+    if (!currentUserId) return null
+    // 获取所有成员，然后过滤匹配当前用户
+    const allMembers = await db.members.toArray()
+    const member = allMembers.find(
+      (m) => m.userId === currentUserId || m.email === currentUserId
+    )
+    return member?.name || null
+  }, [])
+
+  // 优先显示成员记录中的别名，其次显示 currentUser.name
+  const displayName = memberName || user?.name
 
   const handleMenuClick: MenuProps['onClick'] = async (e) => {
     if (e.key === 'logout') {
@@ -20,15 +39,12 @@ export default function UserInfo(props: { login: () => void }) {
         console.error('退出登录失败:', error)
         message.error('退出登录失败，请重试')
       }
+    } else if (e.key === 'profile') {
+      setProfileModalVisible(true)
     }
   }
 
   const items: MenuProps['items'] = [
-    {
-      key: 'member',
-      label: '成员管理',
-      icon: <TeamOutlined />,
-    },
     {
       key: 'profile',
       label: '个人中心',
@@ -65,7 +81,7 @@ export default function UserInfo(props: { login: () => void }) {
           >
             <h2 className="font-bold cursor-pointer">
               <span>欢迎，</span>
-              {user?.name}
+              {displayName}
             </h2>
           </Dropdown>
         ) : (
@@ -74,6 +90,11 @@ export default function UserInfo(props: { login: () => void }) {
           </Button>
         )}
       </div>
+
+      <ProfileModal
+        visible={profileModalVisible}
+        onClose={() => setProfileModalVisible(false)}
+      />
     </div>
   )
 }
