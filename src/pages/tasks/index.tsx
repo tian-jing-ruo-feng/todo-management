@@ -87,6 +87,7 @@ export default function Tasks({ projectId, onTabChange }: TasksProps) {
       {/* 任务过滤表单 */}
       <TaskFilterForm
         visible={selectTab?.key === 'kanban' || selectTab?.key === 'priority'}
+        projectId={projectId}
         onFilterChange={handleFilterChange}
         onReset={handleResetFilter}
         onUploadSuccess={handleUploadSuccess}

@@ -128,6 +128,7 @@ export default function ProjectDetail({
           {showFilterForm && (
             <TaskFilterForm
               visible={showFilterForm}
+              projectId={projectId}
               onFilterChange={handleFilterChange}
               onReset={handleResetFilter}
               onUploadSuccess={handleUploadSuccess}
@@ -155,6 +156,7 @@ export default function ProjectDetail({
           {showFilterForm && (
             <TaskFilterForm
               visible={showFilterForm}
+              projectId={projectId}
               onFilterChange={handleFilterChange}
               onReset={handleResetFilter}
               onUploadSuccess={handleUploadSuccess}
