@@ -26,7 +26,14 @@ export const saveTask = async (task: Task): Promise<string> => {
     // 更新时加密敏感字段
     const updateData = ENCRYPTION_KEY
       ? encryptTaskFields(task, ENCRYPTION_KEY)
-      : task
+      : { ...task }
+
+    // 如果设置了 assignee，同步更新 owner，让负责人拥有编辑权限
+    // 注意：这遵循 Dexie Cloud 的权限机制 - owner 对对象有完全权限
+    if (task.assignee) {
+      ;(updateData as unknown as Record<string, unknown>).owner = task.assignee
+    }
+
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     await db.tasks.update(task.id, updateData as any)
     return task.id
@@ -39,17 +46,14 @@ export const saveTask = async (task: Task): Promise<string> => {
       const project = await db.projects.get(newTaskData.projectId)
       if (project) {
         newTaskData.realmId = project.realmId
-        // 如果任务没有 owner，使用项目的 owner 或当前用户
-        if (!newTaskData.owner) {
-          newTaskData.owner =
-            project.owner || db.cloud.currentUser.value?.userId
-        }
       }
     }
 
-    // 如果还是没有 owner，使用当前用户
+    // 设置 owner：优先使用 assignee，其次使用当前用户
+    // 这样任务负责人自动获得编辑权限
     if (!newTaskData.owner) {
-      newTaskData.owner = db.cloud.currentUser.value?.userId
+      newTaskData.owner =
+        newTaskData.assignee || db.cloud.currentUser.value?.userId || ''
     }
 
     // 加密敏感字段
@@ -117,15 +121,13 @@ export const bulkAddTasks = async (tasks: Task[]): Promise<void> => {
         const project = await db.projects.get(newTask.projectId)
         if (project) {
           newTask.realmId = project.realmId
-          if (!newTask.owner) {
-            newTask.owner = project.owner || db.cloud.currentUser.value?.userId
-          }
         }
       }
 
-      // 如果还是没有 owner，使用当前用户
+      // 设置 owner：优先使用 assignee，其次使用当前用户
       if (!newTask.owner) {
-        newTask.owner = db.cloud.currentUser.value?.userId
+        newTask.owner =
+          newTask.assignee || db.cloud.currentUser.value?.userId || ''
       }
 
       return newTask
