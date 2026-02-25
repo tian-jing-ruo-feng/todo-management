@@ -11,6 +11,7 @@ import {
   priorityRepository,
   statusRepository,
 } from '@/utils/repositories'
+import db from '@/utils/db'
 import {
   DownloadOutlined,
   FlagOutlined,
@@ -42,7 +43,7 @@ export default function ConfigPage({ projectId }: ConfigPageProps) {
   const [loading, setLoading] = useState(false)
 
   // 权限检查
-  const permission = useProjectPermission(projectId)
+  const permission = useProjectPermission(projectId || '')
   const canManage = permission?.isOwner || permission?.role === 'admin'
 
   // 分页状态
@@ -61,6 +62,42 @@ export default function ConfigPage({ projectId }: ConfigPageProps) {
   // 导入相关
   const [uploading, setUploading] = useState(false)
   const [isExporting, setIsExporting] = useState(false)
+
+  // 初始化加载
+  useEffect(() => {
+    if (projectId) {
+      loadData(activeKey, currentPage, pageSize)
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeKey, currentPage, pageSize, projectId])
+
+  useEffect(() => {
+    switch (activeKey) {
+      case ConfigType.Status:
+        setTagIcon(<ScheduleFilled />)
+        break
+      case ConfigType.Priority:
+        setTagIcon(<FlagOutlined />)
+        break
+      case ConfigType.Group:
+        setTagIcon(<GroupOutlined />)
+        break
+    }
+  }, [activeKey])
+
+  // 检查是否有项目ID - 在所有 hooks 之后
+  if (!projectId) {
+    return (
+      <div className="flex flex-col flex-1 gap-4 size-full overflow-hidden">
+        <Alert
+          message="请先选择项目"
+          description="配置管理需要在项目上下文中使用。请先选择一个项目，或在项目详情页面中访问配置管理。"
+          type="warning"
+          showIcon
+        />
+      </div>
+    )
+  }
 
   // 加载数据
   const loadData = async (type: string, page = 1, pageSize = 10) => {
@@ -99,26 +136,6 @@ export default function ConfigPage({ projectId }: ConfigPageProps) {
     loadData(key, 1, 10)
   }
 
-  // 初始化加载
-  useEffect(() => {
-    loadData(activeKey, currentPage, pageSize)
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [activeKey, currentPage, pageSize, projectId])
-
-  useEffect(() => {
-    switch (activeKey) {
-      case ConfigType.Status:
-        setTagIcon(<ScheduleFilled />)
-        break
-      case ConfigType.Priority:
-        setTagIcon(<FlagOutlined />)
-        break
-      case ConfigType.Group:
-        setTagIcon(<GroupOutlined />)
-        break
-    }
-  }, [activeKey])
-
   // 打开新增表单
   const handleAdd = () => {
     setFormTitle('新增配置')
@@ -136,39 +153,79 @@ export default function ConfigPage({ projectId }: ConfigPageProps) {
   // 保存表单
   const handleSave = async (values: ConfigFormData) => {
     try {
-      const newData: ConfigItem = {
+      if (!projectId) {
+        message.error('缺少项目ID')
+        return
+      }
+
+      // 获取当前用户
+      const currentUser = db.cloud.currentUser.value
+      const userId = currentUser?.userId || ''
+
+      // 获取项目的 realmId
+      const project = await db.projects.get(projectId)
+      const realmId = project?.realmId || projectId
+
+      // 计算下一个排序值（新增时）
+      let nextSort = 1
+      if (!editingItem) {
+        const allItems = await (async () => {
+          switch (activeKey) {
+            case ConfigType.Status:
+              return await statusRepository.getAll(projectId)
+            case ConfigType.Priority:
+              return await priorityRepository.getAll(projectId)
+            case ConfigType.Group:
+              return await groupRepository.getAll(projectId)
+            default:
+              return []
+          }
+        })()
+        nextSort =
+          allItems.length > 0
+            ? Math.max(...allItems.map((item) => item.sort || 0)) + 1
+            : 1
+      }
+
+      // 构建完整的配置数据，包含 Dexie Cloud 需要的字段
+      const baseData = {
         id: editingItem?.id || `${activeKey}_${Date.now()}`,
         name: values.name,
         color: values.color,
-        ...(projectId ? { projectId, realmId: projectId } : {}),
+        sort: editingItem?.sort || nextSort,
+        projectId,
+        realmId,
+        owner: editingItem?.owner || userId,
       }
+
       switch (activeKey) {
         case ConfigType.Status:
           if (editingItem) {
-            await statusRepository.update(newData.id, newData)
+            await statusRepository.update(baseData.id, baseData)
           } else {
-            await statusRepository.add(newData as Status)
+            await statusRepository.add(baseData as Status)
           }
           break
         case ConfigType.Priority:
           if (editingItem) {
-            await priorityRepository.update(newData.id, newData)
+            await priorityRepository.update(baseData.id, baseData)
           } else {
-            await priorityRepository.add(newData as Priority)
+            await priorityRepository.add(baseData as Priority)
           }
           break
         case ConfigType.Group:
           if (editingItem) {
-            await groupRepository.update(newData.id, newData)
+            await groupRepository.update(baseData.id, baseData)
           } else {
-            await groupRepository.add(newData as Group)
+            await groupRepository.add(baseData as Group)
           }
           break
       }
 
       message.success(editingItem ? '更新成功' : '添加成功')
       setFormVisible(false)
-      loadData(activeKey)
+      // 立即重新加载数据
+      await loadData(activeKey, currentPage, pageSize)
     } catch (error) {
       console.error('保存失败:', error)
       message.error('保存失败')
@@ -216,21 +273,21 @@ export default function ConfigPage({ projectId }: ConfigPageProps) {
       const activeIndex = data.findIndex((i) => i.id === activeId)
       const overIndex = data.findIndex((i) => i.id === overId)
       const sortedData = arrayMove(data, activeIndex, overIndex).map(
-        (item, index) => ({ ...item, sort: index + 1 })
+        (item, index) => ({ ...item, sort: index + 1 }) as ConfigItem
       )
       // 保存排序结果
       switch (activeKey) {
         case ConfigType.Status:
-          await statusRepository.bulkUpdate(sortedData)
+          await statusRepository.bulkUpdate(sortedData as Status[])
           break
         case ConfigType.Priority:
-          await priorityRepository.bulkUpdate(sortedData)
+          await priorityRepository.bulkUpdate(sortedData as Priority[])
           break
         case ConfigType.Group:
-          await groupRepository.bulkUpdate(sortedData)
+          await groupRepository.bulkUpdate(sortedData as Group[])
           break
       }
-      loadData(activeKey)
+      loadData(activeKey, currentPage, pageSize)
     } catch (error) {
       console.error('排序失败:', error)
       message.error('排序失败')
@@ -261,7 +318,7 @@ export default function ConfigPage({ projectId }: ConfigPageProps) {
           break
       }
       setDeleteVisible(false)
-      loadData(activeKey)
+      loadData(activeKey, currentPage, pageSize)
     } catch (error) {
       console.error('删除失败:', error)
       message.error('删除失败')
@@ -346,7 +403,7 @@ export default function ConfigPage({ projectId }: ConfigPageProps) {
 
           if (successCount > 0) {
             message.success(`成功导入 ${successCount} 条数据`)
-            loadData(activeKey)
+            loadData(activeKey, currentPage, pageSize)
           } else {
             message.warning('没有导入新数据，可能数据已存在或格式不正确')
           }

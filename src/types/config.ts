@@ -19,6 +19,10 @@ export interface ConfigItem {
   id: string
   name: string
   color: string
+  sort?: number
+  projectId?: string
+  realmId?: string
+  owner?: string
 }
 
 /**

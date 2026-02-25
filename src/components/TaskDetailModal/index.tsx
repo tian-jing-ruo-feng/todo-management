@@ -1,7 +1,4 @@
 import type { Task } from '@/types/Task'
-import { groupRepository } from '@/utils/repositories/GroupRepository'
-import { priorityRepository } from '@/utils/repositories/PriorityRepository'
-import { statusRepository } from '@/utils/repositories/StatusRepository'
 import { Form, Input, Modal, Select, Switch, message } from 'antd'
 import { useEffect, useState } from 'react'
 import DateTimePicker from '../DateTimePicker'
@@ -9,6 +6,7 @@ import MemberSelector from '../MemberSelector'
 import RichTextEditor from '../RichTextEditor'
 import { useUser } from '@/hooks/useUser'
 import { useProjectPermission } from '@/services/projectService'
+import { useFilterOptions } from '@/pages/kanban/hooks/useFilterOptions'
 
 interface TaskDetailModalProps {
   visible: boolean
@@ -26,15 +24,9 @@ export default function TaskDetailModal({
   const [form] = Form.useForm()
   const [content, setContent] = useState('')
   const [loading, setLoading] = useState(false)
-  const [statusOptions, setStatusOptions] = useState<
-    Array<{ id: string; name: string; color: string }>
-  >([])
-  const [priorityOptions, setPriorityOptions] = useState<
-    Array<{ id: string; name: string; color: string }>
-  >([])
-  const [groupOptions, setGroupOptions] = useState<
-    Array<{ id: string; name: string; color: string }>
-  >([])
+  const { statusList, priorityList, groupList } = useFilterOptions(
+    task?.projectId
+  )
 
   const { userId } = useUser()
   const projectPermission = useProjectPermission(task?.projectId)
@@ -76,31 +68,6 @@ export default function TaskDetailModal({
     return '此任务已分配给其他成员，您只能查看，无法编辑。'
   }
 
-  useEffect(() => {
-    const loadOptions = async () => {
-      try {
-        const [statuses, priorities, groups] = await Promise.all([
-          statusRepository.getAll(task?.projectId),
-          priorityRepository.getAll(task?.projectId),
-          groupRepository.getAll(task?.projectId),
-        ])
-        // 按 sort 字段正序排列
-        setStatusOptions(statuses.sort((a, b) => (a.sort || 0) - (b.sort || 0)))
-        setPriorityOptions(
-          priorities.sort((a, b) => (a.sort || 0) - (b.sort || 0))
-        )
-        setGroupOptions(groups.sort((a, b) => (a.sort || 0) - (b.sort || 0)))
-      } catch (error) {
-        console.error('加载配置数据失败:', error)
-      }
-    }
-
-    if (task?.projectId) {
-      loadOptions()
-    }
-  }, [task?.projectId])
-
-  // 当任务改变时，更新表单和内容
   useEffect(() => {
     if (task && visible) {
       // 只有在 Modal 可见且有任务时才设置表单值
@@ -184,7 +151,7 @@ export default function TaskDetailModal({
           rules={[{ required: true, message: '请选择任务状态' }]}
         >
           <Select placeholder="选择任务状态" disabled={!canEdit}>
-            {statusOptions.map((status) => (
+            {statusList?.map((status) => (
               <Select.Option key={status.id} value={status.id}>
                 <span style={{ color: status.color }}>●</span> {status.name}
               </Select.Option>
@@ -198,7 +165,7 @@ export default function TaskDetailModal({
           rules={[{ required: true, message: '请选择优先级' }]}
         >
           <Select placeholder="选择优先级" disabled={!canEdit}>
-            {priorityOptions.map((priority) => (
+            {priorityList?.map((priority) => (
               <Select.Option key={priority.id} value={priority.id}>
                 <span style={{ color: priority.color }}>●</span> {priority.name}
               </Select.Option>
@@ -229,7 +196,7 @@ export default function TaskDetailModal({
             allowClear
             disabled={!canEdit}
           >
-            {groupOptions.map((group) => (
+            {groupList?.map((group) => (
               <Select.Option key={group.id} value={group.id}>
                 <span style={{ color: group.color }}>●</span> {group.name}
               </Select.Option>

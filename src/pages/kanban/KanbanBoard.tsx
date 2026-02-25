@@ -2,7 +2,6 @@ import TaskCreateModal from '@/components/TaskCreateModal'
 import TaskDetailModal from '@/components/TaskDetailModal'
 import type { Task } from '@/types/Task'
 import { deleteTask, getAllTasksCount, saveTask } from '@/utils/db'
-import { statusRepository } from '@/utils/repositories/StatusRepository'
 import type { DragEndEvent, DragOverEvent, DragStartEvent } from '@dnd-kit/core'
 import {
   DndContext,
@@ -24,6 +23,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import KanbanColumn from './KanbanColumn'
 import KanbanItem from './KanbanItem'
 import { useCrossColumnDragging, useSameColumnSorting } from './hooks'
+import { useFilterOptions } from './hooks/useFilterOptions'
 import { findTargetColumn } from './utils/taskOperations'
 
 interface Column {
@@ -44,40 +44,29 @@ export default function KanbanBoard({
   onDragEnd,
   projectId,
 }: KanbanBoardProps) {
-  // 动态状态和列管理
-  const [statusList, setStatusList] = useState<
-    Array<{ id: string; name: string; color: string }>
-  >([])
+  // 使用 useFilterOptions hook 实时监听配置数据变化
+  const { statusList } = useFilterOptions(projectId)
   const [columns, setColumns] = useState<Column[]>([])
 
-  // 加载状态数据并生成列
+  // 当 statusList 变化时，更新列数据
   useEffect(() => {
-    const loadStatusData = async () => {
-      try {
-        const statuses = await statusRepository.getAll(projectId)
-        setStatusList(statuses)
-
-        // 根据状态数据动态生成列
-        const dynamicColumns: Column[] = statuses.map((status) => ({
-          id: status.id,
-          title: status.name,
-          color: status.color,
-        }))
-
-        setColumns(dynamicColumns)
-      } catch (error) {
-        console.error('加载状态数据失败:', error)
-      }
+    if (statusList && statusList.length > 0) {
+      const dynamicColumns: Column[] = statusList.map((status) => ({
+        id: status.id,
+        title: status.name,
+        color: status.color,
+      }))
+      setColumns(dynamicColumns)
     }
-
-    loadStatusData()
-  }, [projectId])
+  }, [statusList])
 
   // 动态状态映射
   const getColumnByStatus = useCallback(
     (status: string): string => {
       return (
-        statusList.find((s) => s.id === status)?.id || statusList[0]?.id || ''
+        statusList?.find((s) => s.id === status)?.id ||
+        statusList?.[0]?.id ||
+        ''
       )
     },
     [statusList]

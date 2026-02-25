@@ -1,11 +1,3 @@
-import type { Group } from '@/types/Group'
-import type { Priority } from '@/types/Priority'
-import type { Status } from '@/types/Status'
-import {
-  groupRepository,
-  priorityRepository,
-  statusRepository,
-} from '@/utils/repositories'
 import {
   DownloadOutlined,
   PlusOutlined,
@@ -13,10 +5,11 @@ import {
 } from '@ant-design/icons'
 import { Button, Form, Input, Select, Upload, message } from 'antd'
 import dayjs from 'dayjs'
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useState } from 'react'
 import type { Task } from '../types/Task'
 import { downloadFile } from '../utils/common'
 import { getAllTasks, getTaskById, saveTask } from '../utils/db'
+import { useFilterOptions } from '@/pages/kanban/hooks/useFilterOptions'
 
 interface TaskFilterFormProps {
   visible: boolean
@@ -43,9 +36,7 @@ export default function TaskFilterForm({
   onAddTask,
 }: TaskFilterFormProps) {
   const [form] = Form.useForm()
-  const [statusList, setStatusList] = useState<Status[]>([])
-  const [priorityList, setPriorityList] = useState<Priority[]>([])
-  const [groupList, setGroupList] = useState<Group[]>([])
+  const { statusList, priorityList, groupList } = useFilterOptions(projectId)
   const [isExporting, setIsExporting] = useState(false)
   // 导入相关
   const [uploading, setUploading] = useState(false)
@@ -55,30 +46,6 @@ export default function TaskFilterForm({
     const values = form.getFieldsValue()
     onFilterChange(values)
   }, [form, onFilterChange])
-
-  const loadFilterOptions = useCallback(async () => {
-    try {
-      // 预加载过滤选项数据
-      const [statuses, priorities, groups] = await Promise.all([
-        statusRepository.getAll(projectId),
-        priorityRepository.getAll(projectId),
-        groupRepository.getAll(projectId),
-      ])
-      setStatusList(statuses)
-      setPriorityList(priorities)
-      setGroupList(groups)
-      handleValuesChange()
-    } catch (error) {
-      console.error('预加载过滤选项数据失败:', error)
-    }
-  }, [projectId, handleValuesChange])
-
-  useEffect(() => {
-    if (visible) {
-      loadFilterOptions()
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [visible, projectId])
 
   // 重置过滤
   const handleReset = () => {
