@@ -1,5 +1,5 @@
 import { useCallback, useState } from 'react'
-import { Tabs, Card, Button, Spin } from 'antd'
+import { Tabs, Card, Button, Spin, message } from 'antd'
 import {
   ProjectOutlined,
   SettingOutlined,
@@ -7,8 +7,10 @@ import {
   ArrowLeftOutlined,
   TableOutlined,
   OrderedListOutlined,
+  EditOutlined,
 } from '@ant-design/icons'
-import { useProject } from '@/services/projectService'
+import { useProject, useProjectPermission } from '@/services/projectService'
+import { ProjectService } from '@/services/projectService'
 import ConfigPage from '../config'
 import MemberManagement from './MemberManagement'
 import TaskFilterForm from '@/components/TaskFilterForm'
@@ -19,6 +21,7 @@ import { useFilterOptions } from '../kanban/hooks/useFilterOptions'
 import { useTaskFilter } from '../kanban/hooks/useTaskFilter'
 import { getAllTasksCount, saveTask } from '@/utils/db'
 import type { Task } from '@/types/Task'
+import EditProjectModal from '../projects/EditProjectModal'
 import './index.css'
 
 export interface ProjectDetailProps {
@@ -31,11 +34,17 @@ export default function ProjectDetail({
   onBack,
 }: ProjectDetailProps) {
   const project = useProject(projectId)
+  const projectPermission = useProjectPermission(projectId)
   const [activeTab, setActiveTab] = useState('kanban')
   const [createModalVisible, setCreateModalVisible] = useState(false)
+  const [editModalVisible, setEditModalVisible] = useState(false)
+  const [editLoading, setEditLoading] = useState(false)
   const [defaultColumnId, setDefaultColumnId] = useState<string>('')
 
   const { statusList, priorityList, groupList } = useFilterOptions(projectId)
+
+  // 只有项目所有者可以编辑
+  const canEditProject = projectPermission?.isOwner ?? false
 
   const beforeCreateTask = () => {}
   const {
@@ -76,6 +85,22 @@ export default function ProjectDetail({
     } catch (error) {
       console.error('创建任务失败:', error)
       return
+    }
+  }
+
+  const handleEditProject = async (name: string, description?: string) => {
+    if (!project) return
+
+    setEditLoading(true)
+    try {
+      await ProjectService.updateProject(projectId, { name, description })
+      message.success('项目更新成功')
+      setEditModalVisible(false)
+    } catch (error) {
+      console.error('更新项目失败:', error)
+      message.error('更新项目失败')
+    } finally {
+      setEditLoading(false)
     }
   }
 
@@ -188,6 +213,15 @@ export default function ProjectDetail({
               <p className="text-gray-600 mt-2">{project.description}</p>
             )}
           </div>
+          {canEditProject && (
+            <Button
+              type="primary"
+              icon={<EditOutlined />}
+              onClick={() => setEditModalVisible(true)}
+            >
+              编辑项目
+            </Button>
+          )}
         </div>
       </Card>
 
@@ -213,6 +247,15 @@ export default function ProjectDetail({
         projectId={projectId}
         onClose={handleCreateModalClose}
         onSave={handleCreateTask}
+      />
+
+      {/* 编辑项目弹窗 */}
+      <EditProjectModal
+        visible={editModalVisible}
+        project={project}
+        loading={editLoading}
+        onClose={() => setEditModalVisible(false)}
+        onUpdate={handleEditProject}
       />
     </div>
   )
