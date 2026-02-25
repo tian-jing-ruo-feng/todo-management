@@ -7,17 +7,13 @@ import { useLiveQuery } from 'dexie-react-hooks'
 export function useFilterOptions(projectId?: string) {
   const statusList = useLiveQuery(
     async () => {
-      console.log('[useFilterOptions] 查询状态, projectId:', projectId)
       const allStatuses = await db.statuses.toArray()
-      console.log('[useFilterOptions] 所有状态:', allStatuses.length)
 
       if (projectId) {
-        const filtered = await db.statuses
+        return await db.statuses
           .where('projectId')
           .equals(projectId)
           .toArray()
-        console.log('[useFilterOptions] 项目状态:', filtered.length)
-        return filtered
       }
       return allStatuses
     },
@@ -27,17 +23,13 @@ export function useFilterOptions(projectId?: string) {
 
   const priorityList = useLiveQuery(
     async () => {
-      console.log('[useFilterOptions] 查询优先级, projectId:', projectId)
       const allPriorities = await db.priorities.toArray()
-      console.log('[useFilterOptions] 所有优先级:', allPriorities.length)
 
       if (projectId) {
-        const filtered = await db.priorities
+        return await db.priorities
           .where('projectId')
           .equals(projectId)
           .toArray()
-        console.log('[useFilterOptions] 项目优先级:', filtered.length)
-        return filtered
       }
       return allPriorities
     },

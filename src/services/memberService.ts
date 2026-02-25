@@ -76,13 +76,6 @@ export class MemberService {
     // 获取角色对应的权限
     const permissions = ROLE_PERMISSIONS[role] || ROLE_PERMISSIONS['member']
 
-    console.log('[inviteMember] 创建邀请:', {
-      email,
-      role,
-      permissions,
-      realmId: project.realmId,
-    })
-
     // 创建邀请记录
     // Dexie Cloud 的 members 表要求 ID 必须以 "mmb" 前缀开头
     const memberId = `mmb${Date.now()}_${Math.random().toString(36).slice(2, 11)}`
@@ -96,16 +89,8 @@ export class MemberService {
       owner: db.cloud.currentUserId!,
     })
 
-    console.log('[inviteMember] 邀请已创建，触发同步...')
-
     // 触发同步，确保邀请上传到云端
     await db.cloud.sync()
-
-    console.log('[inviteMember] 同步完成')
-
-    // 验证权限是否保存成功
-    const savedMember = await db.members.get(memberId)
-    console.log('[inviteMember] 保存后的成员记录:', savedMember)
   }
 
   /**
@@ -113,14 +98,12 @@ export class MemberService {
    */
   static async updateMemberRole(memberId: string, role: string): Promise<void> {
     const permissions = ROLE_PERMISSIONS[role] || ROLE_PERMISSIONS['member']
-    console.log('[updateMemberRole] 更新成员角色:', memberId, role, permissions)
     await db.members.update(memberId, {
       roles: [role],
       permissions, // 同时更新权限
     })
     // 触发同步
     await db.cloud.sync()
-    console.log('[updateMemberRole] 同步完成')
   }
 
   /**
@@ -135,10 +118,6 @@ export class MemberService {
    * 使用 Dexie Cloud 内置的邀请处理机制
    */
   static async acceptInvite(invite: Invite): Promise<void> {
-    console.log('[acceptInvite] 接受邀请, inviteId:', invite.id)
-    console.log('[acceptInvite] invite.permissions:', invite.permissions)
-    console.log('[acceptInvite] invite.roles:', invite.roles)
-
     // 保存邀请信息，用于接受后恢复权限
     const inviteRoles = invite.roles
     const invitePermissions = invite.permissions
@@ -146,33 +125,17 @@ export class MemberService {
       invitePermissions || ROLE_PERMISSIONS[inviteRoles?.[0] || 'member']
 
     // 使用 Dexie Cloud 内置的 accept 方法
-    console.log('[acceptInvite] 使用内置 accept 方法')
     await invite.accept()
-    console.log('[acceptInvite] accept 完成')
 
     // 触发同步，获取项目数据
-    console.log('[acceptInvite] 触发同步获取项目数据...')
     await db.cloud.sync()
-    console.log('[acceptInvite] 同步完成')
 
-    // 检查成员记录
+    // 检查成员记录并确保权限正确设置
     const member = await db.members.get(invite.id)
-    console.log('[acceptInvite] 同步后成员记录:', member)
-
-    // 始终确保权限正确设置
     if (member) {
-      console.log('[acceptInvite] 确保权限设置正确...')
       await db.members.update(member.id, { permissions: targetPermissions })
-      console.log('[acceptInvite] 权限已设置:', targetPermissions)
-
       // 再次同步确保权限上传到服务器
-      console.log('[acceptInvite] 同步权限到服务器...')
       await db.cloud.sync()
-      console.log('[acceptInvite] 权限同步完成')
-
-      // 验证权限是否成功保存
-      const verifyMember = await db.members.get(invite.id)
-      console.log('[acceptInvite] 验证成员权限:', verifyMember?.permissions)
     }
   }
 
@@ -181,10 +144,7 @@ export class MemberService {
    * 使用 Dexie Cloud 内置的邀请处理机制
    */
   static async rejectInvite(invite: Invite): Promise<void> {
-    console.log('[rejectInvite] 拒绝邀请, inviteId:', invite.id)
-
     await invite.reject()
-    console.log('[rejectInvite] reject 完成')
   }
 
   /**
@@ -240,24 +200,9 @@ export class MemberService {
    * 用于迁移旧数据
    */
   static async migrateMemberPermissions(): Promise<void> {
-    console.log('[migrateMemberPermissions] 开始迁移成员权限...')
-
     const members = await db.members.toArray()
-    console.log(
-      '[migrateMemberPermissions] 找到成员:',
-      members.map((m) => ({
-        id: m.id,
-        userId: m.userId,
-        email: m.email,
-        roles: m.roles,
-        permissions: m.permissions,
-      }))
-    )
-
-    let updatedCount = 0
 
     for (const member of members) {
-      // 只更新没有权限或权限不正确的成员
       const role = member.roles?.[0] || 'member'
       const expectedPermissions =
         ROLE_PERMISSIONS[role] || ROLE_PERMISSIONS['member']
@@ -269,25 +214,11 @@ export class MemberService {
           JSON.stringify(expectedPermissions)
 
       if (needsUpdate) {
-        console.log(
-          `[migrateMemberPermissions] 为成员 ${member.email || member.userId} 设置权限:`,
-          expectedPermissions
-        )
-
         await db.members.update(member.id, { permissions: expectedPermissions })
-        updatedCount++
       }
     }
 
-    console.log(
-      `[migrateMemberPermissions] 更新了 ${updatedCount} 个成员的权限`
-    )
-
-    if (updatedCount > 0) {
-      console.log('[migrateMemberPermissions] 触发同步...')
-      await db.cloud.sync()
-      console.log('[migrateMemberPermissions] 同步完成')
-    }
+    await db.cloud.sync()
   }
 
   /**

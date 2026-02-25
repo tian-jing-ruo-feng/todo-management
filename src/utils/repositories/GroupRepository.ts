@@ -132,7 +132,6 @@ export class GroupRepository {
     const existingGroups = await db.groups.toArray()
     if (existingGroups.length === 0) {
       await db.groups.bulkAdd(sampleGroups)
-      console.log('分组数据初始化完成')
     }
   }
 }

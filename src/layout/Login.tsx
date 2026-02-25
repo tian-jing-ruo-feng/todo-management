@@ -86,7 +86,7 @@ export function MyLoginGUI(props: {
       .catch((error) => {
         message.error('登录失败')
         setIsLogining(false)
-        console.log(error)
+        console.error('登录失败:', error)
       })
       .finally(() => {
         setIsLogining(false)

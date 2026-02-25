@@ -191,6 +191,5 @@ export const initDatabaseWithSampleData = async (
       ? encryptTasks(sampleTasks, ENCRYPTION_KEY)
       : sampleTasks
     await db.tasks.bulkAdd(encryptedTasks)
-    console.log('数据库初始化完成，已添加示例数据')
   }
 }

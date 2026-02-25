@@ -279,7 +279,6 @@ export default function ConfigPage({ projectId }: ConfigPageProps) {
             setUploading(false)
             return
           }
-          console.log(jsonData, '<<<<< jsonData')
 
           // 根据当前激活的标签页导入相应数据
           let successCount = 0

@@ -37,7 +37,6 @@ export default function MemberSelector({
     const owner = await db.projects.get(projectId)
 
     // 合并成员和所有者
-    console.log(projectMembers, '<<<<<< projectMembers')
     const allMembers = [
       {
         id: owner?.owner || '',

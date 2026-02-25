@@ -63,8 +63,6 @@ export default function TaskTable({
 
   const rowSelection: TableProps<Task>['rowSelection'] = {
     onChange: (selectedRowKeys, selectedRows) => {
-      console.log(
-        `selectedRowKeys: ${selectedRowKeys}`,
         'selectedRows:',
         selectedRows
       )

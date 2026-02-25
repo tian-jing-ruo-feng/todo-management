@@ -132,7 +132,6 @@ export class PriorityRepository {
     const existingPriorities = await db.priorities.toArray()
     if (existingPriorities.length === 0) {
       await db.priorities.bulkAdd(samplePriorities)
-      console.log('优先级数据初始化完成')
     }
   }
 }

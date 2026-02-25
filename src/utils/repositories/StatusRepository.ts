@@ -131,7 +131,6 @@ export class StatusRepository {
     const existingStatuses = await db.statuses.toArray()
     if (existingStatuses.length === 0) {
       await db.statuses.bulkAdd(sampleStatuses)
-      console.log('状态数据初始化完成')
     }
   }
 }

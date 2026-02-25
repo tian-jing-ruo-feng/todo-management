@@ -145,7 +145,6 @@ export default function TaskFilterForm({
           setUploading(true)
           const tasks = JSON.parse(content)
           // 处理导入的任务数据
-          console.log(tasks, '<<<<< tasks')
           // 可以在这里添加导入逻辑
           let successCount = 0
           for (const task of tasks) {

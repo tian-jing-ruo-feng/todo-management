@@ -11,16 +11,6 @@ import db from '@/utils/db'
 export function useUser() {
   const user = useObservable(db.cloud.currentUser)
 
-  // 添加诊断日志
-  useEffect(() => {
-    console.log('[useUser] user 变化:', {
-      userId: user?.userId,
-      isLoggedIn: user?.isLoggedIn,
-      name: user?.name,
-      email: user?.email,
-    })
-  }, [user])
-
   // 判断是否正在加载：
   // user 为 undefined 表示 currentUser Observable 还未发射值
   const isLoading = user === undefined

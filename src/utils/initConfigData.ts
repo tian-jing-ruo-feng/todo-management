@@ -22,8 +22,6 @@ export const initConfigData = async (): Promise<void> => {
 
     // 初始化分组数据
     await groupRepository.initWithSampleData(mockGroups as Group[])
-
-    console.log('配置数据初始化完成')
   } catch (error) {
     console.error('初始化配置数据失败:', error)
   }

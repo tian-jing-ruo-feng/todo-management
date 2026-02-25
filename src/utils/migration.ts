@@ -24,15 +24,11 @@ export class DataMigration {
       .equals(currentUserId)
       .count()
     if (existingProjects > 0) {
-      console.log('数据已经迁移过了，跳过迁移')
       return
     }
 
-    console.log('开始数据迁移...')
-
     // 1. 初始化角色配置
     await RoleService.initializeRoles()
-    console.log('角色配置初始化完成')
 
     // 2. 创建默认项目
     const defaultProjectId = `project_${currentUserId}_default`
@@ -47,7 +43,6 @@ export class DataMigration {
       createTime: now,
       updateTime: now,
     })
-    console.log('默认项目创建完成:', defaultProjectId)
 
     // 3. 迁移状态配置
     const statuses = await db.statuses.toArray()
@@ -57,7 +52,6 @@ export class DataMigration {
         realmId: defaultProjectId,
       })
     }
-    console.log(`迁移了 ${statuses.length} 个状态配置`)
 
     // 4. 迁移优先级配置
     const priorities = await db.priorities.toArray()
@@ -67,7 +61,6 @@ export class DataMigration {
         realmId: defaultProjectId,
       })
     }
-    console.log(`迁移了 ${priorities.length} 个优先级配置`)
 
     // 5. 迁移分组配置
     const groups = await db.groups.toArray()
@@ -77,7 +70,6 @@ export class DataMigration {
         realmId: defaultProjectId,
       })
     }
-    console.log(`迁移了 ${groups.length} 个分组配置`)
 
     // 6. 迁移任务
     const tasks = await db.tasks.toArray()
@@ -87,9 +79,6 @@ export class DataMigration {
         realmId: defaultProjectId,
       })
     }
-    console.log(`迁移了 ${tasks.length} 个任务`)
-
-    console.log('数据迁移完成！')
   }
 
   /**
@@ -111,9 +100,7 @@ export class DataMigration {
    * 用于修复旧数据
    */
   static async migrateProjectRoles(): Promise<void> {
-    console.log('[migrateProjectRoles] 开始角色权限迁移...')
     await ProjectService.migrateAllProjectRoles()
-    console.log('[migrateProjectRoles] 角色权限迁移完成')
   }
 }
 

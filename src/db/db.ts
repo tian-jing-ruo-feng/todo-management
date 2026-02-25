@@ -57,11 +57,6 @@ export class ToDoDb extends Dexie {
       customLoginGui: true,
     })
 
-    // 监听同步状态，帮助诊断权限问题
-    this.cloud.syncState.subscribe((state) => {
-      console.log('[Dexie Cloud 同步状态]:', state)
-    })
-
     // 初始化时检查并恢复登录状态
     this.initializeAuthState()
 
@@ -86,19 +81,13 @@ export class ToDoDb extends Dexie {
       const loginsTable = this.table('$logins')
       if (loginsTable) {
         const logins = await loginsTable.toArray()
-        console.log('[DB初始化] $logins 表数据:', logins.length, '条')
 
         if (logins.length > 0) {
           // 有登录数据，检查 currentUser 状态
           const currentUser = this.cloud.currentUser.value
-          console.log(
-            '[DB初始化] currentUser.isLoggedIn:',
-            currentUser?.isLoggedIn
-          )
 
           // 如果有登录数据但 isLoggedIn 为 false，触发同步
           if (!currentUser?.isLoggedIn) {
-            console.log('[DB初始化] 检测到登录数据但未登录状态，触发同步...')
             await this.cloud.sync()
           }
         }

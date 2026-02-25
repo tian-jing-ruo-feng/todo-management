@@ -29,31 +29,11 @@ export class ProjectService {
     userId: string,
     userEmail?: string
   ): Promise<Project[]> {
-    console.log(
-      '[getUserProjects] 开始查询, userId:',
-      userId,
-      'email:',
-      userEmail
-    )
-
-    // 先检查所有项目的 owner
-    const allProjectsInDb = await db.projects.toArray()
-    console.log(
-      '[getUserProjects] 数据库中所有项目:',
-      allProjectsInDb.map((p) => ({
-        id: p.id,
-        name: p.name,
-        owner: p.owner,
-        realmId: p.realmId,
-      }))
-    )
-
     // 获取用户作为所有者的项目
     const ownedProjects = await db.projects
       .where('owner')
       .equals(userId)
       .toArray()
-    console.log('[getUserProjects] ownedProjects:', ownedProjects.length)
 
     // 获取用户作为成员的项目 - 同时支持 userId 和 email 查询
     const membershipsByUserId = await db.members
@@ -77,25 +57,12 @@ export class ProjectService {
     })
     const memberships = Array.from(membershipsMap.values())
 
-    console.log(
-      '[getUserProjects] memberships:',
-      memberships.length,
-      memberships.map((m) => ({
-        id: m.id,
-        userId: m.userId,
-        email: m.email,
-        realmId: m.realmId,
-        invite: m.invite,
-      }))
-    )
     const memberRealmIds = memberships.map((m) => m.realmId)
-    console.log('[getUserProjects] memberRealmIds:', memberRealmIds)
 
     const memberProjects =
       memberRealmIds.length > 0
         ? await db.projects.where('realmId').anyOf(memberRealmIds).toArray()
         : []
-    console.log('[getUserProjects] memberProjects:', memberProjects.length)
 
     // 合并并去重
     const allProjects = [...ownedProjects, ...memberProjects]
@@ -103,7 +70,6 @@ export class ProjectService {
       new Map(allProjects.map((p) => [p.id, p])).values()
     )
 
-    console.log('[getUserProjects] 最终项目数:', uniqueProjects.length)
     return uniqueProjects
   }
 
@@ -124,13 +90,6 @@ export class ProjectService {
     const projectId = `project_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
     const realmId = `rlm_${projectId}` // Dexie Cloud realms 表主键需要 "rlm" 前缀
     const now = new Date().toISOString()
-
-    console.log(
-      '[createProject] 开始创建项目, projectId:',
-      projectId,
-      'userId:',
-      currentUserId
-    )
 
     await db.transaction(
       'rw',
@@ -273,24 +232,15 @@ export class ProjectService {
       }
     )
 
-    console.log('[createProject] 项目创建完成，等待同步...')
-
-    // 等待同步完成，使用更可靠的方式
+    // 等待同步完成
     try {
-      // 先等待一段时间让本地变更被检测到
       await new Promise((resolve) => setTimeout(resolve, 500))
-
-      // 触发同步并等待完成
       await db.cloud.sync()
-
-      console.log('[createProject] 同步完成')
 
       // 验证项目是否仍然存在
       const project = await db.projects.get(projectId)
       if (!project) {
         console.error('[createProject] 同步后项目丢失！')
-      } else {
-        console.log('[createProject] 项目验证成功:', project)
       }
     } catch (error) {
       console.error('[createProject] 同步失败:', error)
@@ -326,32 +276,66 @@ export class ProjectService {
       throw new Error('只有项目所有者才能删除项目')
     }
 
-    await db.transaction(
-      'rw',
-      [
-        db.projects,
-        db.tasks,
-        db.statuses,
-        db.priorities,
-        db.groups,
-        db.members,
-      ],
-      async () => {
-        // 删除项目下的所有任务
-        await db.tasks.where('projectId').equals(projectId).delete()
+    try {
+      // 删除项目下的所有数据
+      await db.transaction(
+        'rw',
+        [db.projects, db.tasks, db.statuses, db.priorities, db.groups],
+        async () => {
+          await db.tasks.where('projectId').equals(projectId).delete()
+          await db.statuses.where('projectId').equals(projectId).delete()
+          await db.priorities.where('projectId').equals(projectId).delete()
+          await db.groups.where('projectId').equals(projectId).delete()
+          await db.projects.delete(projectId)
+        }
+      )
 
-        // 删除项目下的所有配置
-        await db.statuses.where('projectId').equals(projectId).delete()
-        await db.priorities.where('projectId').equals(projectId).delete()
-        await db.groups.where('projectId').equals(projectId).delete()
+      // 等待同步
+      await new Promise((resolve) => setTimeout(resolve, 1000))
+      await db.cloud.sync()
 
-        // 删除项目成员
-        await db.members.where('realmId').equals(project.realmId).delete()
-
-        // 删除项目
-        await db.projects.delete(projectId)
+      // 验证项目是否被删除
+      let deletedProject = await db.projects.get(projectId)
+      if (!deletedProject) {
+        return
       }
-    )
+
+      // 如果项目还在，尝试第二次删除
+      await db.projects.delete(projectId)
+      await new Promise((resolve) => setTimeout(resolve, 1000))
+      await db.cloud.sync()
+
+      deletedProject = await db.projects.get(projectId)
+      if (!deletedProject) {
+        return
+      }
+
+      // 如果还是失败，尝试删除成员和角色
+      if (project.realmId) {
+        await db.transaction('rw', [db.members, db.roles], async () => {
+          await db.members.where('realmId').equals(project.realmId).delete()
+          await db.roles.where('realmId').equals(project.realmId).delete()
+        })
+
+        await new Promise((resolve) => setTimeout(resolve, 1000))
+        await db.cloud.sync()
+
+        // 最后尝试删除项目
+        await db.projects.delete(projectId)
+        await new Promise((resolve) => setTimeout(resolve, 500))
+        await db.cloud.sync()
+
+        deletedProject = await db.projects.get(projectId)
+        if (deletedProject) {
+          throw new Error(
+            '删除失败：服务器拒绝了删除操作。这可能是 Dexie Cloud 的权限限制，请联系支持。'
+          )
+        }
+      }
+    } catch (error) {
+      console.error('[deleteProject] 删除失败:', error)
+      throw error
+    }
   }
 
   /**
@@ -365,11 +349,8 @@ export class ProjectService {
       .equals(realmId)
       .toArray()
     if (existingRoles.length > 0) {
-      console.log('[ensureProjectRoles] 角色已存在，跳过')
       return
     }
-
-    console.log('[ensureProjectRoles] 为 realm 添加角色:', realmId)
 
     // 获取 realm 的 owner
     const realm = await db.realms.get(realmId)
@@ -409,23 +390,18 @@ export class ProjectService {
 
     // 触发同步
     await db.cloud.sync()
-    console.log('[ensureProjectRoles] 角色添加完成')
   }
 
   /**
    * 为所有已存在的项目添加角色权限定义
    */
   static async migrateAllProjectRoles(): Promise<void> {
-    console.log('[migrateAllProjectRoles] 开始迁移...')
-
     const projects = await db.projects.toArray()
     for (const project of projects) {
       if (project.realmId) {
         await this.ensureProjectRoles(project.realmId)
       }
     }
-
-    console.log('[migrateAllProjectRoles] 迁移完成')
   }
 
   /**
@@ -484,24 +460,11 @@ export class ProjectService {
 export function useProjects() {
   const { isLoggedIn: userLoggedIn, userId, email } = useUser()
 
-  console.log('[useProjects] 状态:', { userLoggedIn, userId, email })
-
   return useLiveQuery(async () => {
-    console.log(
-      '[useProjects] 查询执行, userLoggedIn:',
-      userLoggedIn,
-      'userId:',
-      userId,
-      'email:',
-      email
-    )
     if (!userLoggedIn || !userId) {
-      console.log('[useProjects] 条件不满足，返回空数组')
       return []
     }
-    const projects = await ProjectService.getUserProjects(userId, email)
-    console.log('[useProjects] 查询结果:', projects.length, '个项目')
-    return projects
+    return await ProjectService.getUserProjects(userId, email)
   }, [userLoggedIn, userId, email])
 }
 

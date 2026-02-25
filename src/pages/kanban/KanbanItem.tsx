@@ -65,7 +65,7 @@ export default function KanbanItem({
     try {
       return await priorityRepository.getById(taskPriority)
     } catch (error) {
-      console.log(error, 'getPriorityByTaskPriority error')
+      console.error('getPriorityByTaskPriority error:', error)
       return null
     }
   }

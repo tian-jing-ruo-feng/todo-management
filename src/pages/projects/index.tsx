@@ -150,6 +150,9 @@ export default function ProjectsPage({
         <p className="text-gray-600">
           确定要删除这个项目吗？删除后将同时删除项目下的所有任务、配置和成员数据，此操作不可恢复。
         </p>
+        <p className="text-orange-500 text-sm mt-2">
+          注意：删除操作需要同步到云端，请稍候片刻。
+        </p>
       </Modal>
     </div>
   )
