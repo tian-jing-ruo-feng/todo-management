@@ -191,6 +191,17 @@ export function MyLoginGUI(props: {
       footer={null}
       keyboard={false}
       maskClosable={false}
+      afterClose={() => {
+        // Modal 完全关闭后清空表单和状态
+        form.resetFields()
+        setEmailValid(false)
+        setCountdown(0)
+        setEmailSendResult({ otp_id: 0, type: '' })
+        if (countdownTimerRef.current) {
+          clearInterval(countdownTimerRef.current)
+          countdownTimerRef.current = null
+        }
+      }}
       onCancel={handelOnClose}
     >
       <Form form={form} layout="vertical" onFinish={handleSubmit}>
