@@ -16,7 +16,7 @@ import { useProjectPermission, useProject } from '@/services/projectService'
 import InviteModal from './InviteModal'
 import type { DBRealmMember } from 'dexie-cloud-addon'
 import db from '@/utils/db'
-import { useObservable } from 'dexie-react-hooks'
+import { useLiveQuery } from 'dexie-react-hooks'
 
 export interface MemberManagementProps {
   projectId: string
@@ -26,10 +26,32 @@ export default function MemberManagement({ projectId }: MemberManagementProps) {
   const members = useProjectMembers(projectId)
   const permission = useProjectPermission(projectId)
   const [inviteModalVisible, setInviteModalVisible] = useState(false)
-  const user = useObservable(db.cloud.currentUser)
 
   // 获取项目信息
   const project = useProject(projectId)
+
+  // 获取项目所有者信息
+  const ownerInfo = useLiveQuery(async () => {
+    if (!project?.owner) return null
+
+    // 从 realms 表获取所有者基本信息
+    const realm = await db.realms.get(project.realmId)
+    if (realm?.owner) {
+      // 尝试从 members 表获取更详细的信息
+      const ownerMember = await db.members
+        .where('realmId')
+        .equals(project.realmId)
+        .filter((m) => m.userId === project.owner)
+        .first()
+
+      return {
+        userId: project.owner,
+        name: ownerMember?.name || ownerMember?.userId || '项目所有者',
+        email: ownerMember?.email || '',
+      }
+    }
+    return null
+  }, [project])
 
   const handleRemoveMember = async (memberId: string) => {
     Modal.confirm({
@@ -235,8 +257,8 @@ export default function MemberManagement({ projectId }: MemberManagementProps) {
           {
             id: project?.owner || 'owner',
             userId: project?.owner,
-            name: user?.name || '项目所有者',
-            email: user?.email || '',
+            name: ownerInfo?.name || '项目所有者',
+            email: ownerInfo?.email || '',
             roles: ['admin'],
             invite: undefined,
             realmId: project?.realmId || '',
