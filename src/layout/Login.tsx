@@ -1,5 +1,5 @@
 import { Button, Form, Input, Modal, message } from 'antd'
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import db from '@/db/db'
 import type { DXCUserInteraction } from 'dexie-cloud-addon'
 
@@ -23,6 +23,8 @@ export function MyLoginGUI(props: {
   // 验证码发送结果
   const [isSending, setIsSending] = useState(false)
   const [isLogining, setIsLogining] = useState(false)
+  const [countdown, setCountdown] = useState(0)
+  const countdownTimerRef = useRef<NodeJS.Timeout | null>(null)
   const [emailSendResult, setEmailSendResult] = useState<{
     otp_id: number
     type: string
@@ -83,7 +85,14 @@ export function MyLoginGUI(props: {
       }
     )
 
-    return () => subscription.unsubscribe()
+    return () => {
+      subscription.unsubscribe()
+      // 组件卸载时清除倒计时定时器
+      if (countdownTimerRef.current) {
+        clearInterval(countdownTimerRef.current)
+        countdownTimerRef.current = null
+      }
+    }
   }, [])
 
   const handleSendEmail = async () => {
@@ -105,6 +114,21 @@ export function MyLoginGUI(props: {
           if (data.otp_id) {
             setEmailSendResult(data)
             message.success('验证码已发送, 请查收邮箱')
+            // 启动60秒倒计时
+            setCountdown(60)
+            countdownTimerRef.current = setInterval(() => {
+              setCountdown((prev) => {
+                if (prev <= 1) {
+                  // 倒计时结束，清除定时器
+                  if (countdownTimerRef.current) {
+                    clearInterval(countdownTimerRef.current)
+                    countdownTimerRef.current = null
+                  }
+                  return 0
+                }
+                return prev - 1
+              })
+            }, 1000)
           } else {
             message.error('验证码获取失败')
           }
@@ -148,6 +172,12 @@ export function MyLoginGUI(props: {
   const handelOnClose = () => {
     setIsSending(false)
     setIsLogining(false)
+    setCountdown(0)
+    // 清除倒计时定时器
+    if (countdownTimerRef.current) {
+      clearInterval(countdownTimerRef.current)
+      countdownTimerRef.current = null
+    }
     form.resetFields()
     onClose()
   }
@@ -187,10 +217,10 @@ export function MyLoginGUI(props: {
             <Button
               type="primary"
               onClick={handleSendEmail}
-              disabled={!emailValid}
+              disabled={!emailValid || countdown > 0}
               loading={isSending}
             >
-              发送验证码
+              {countdown > 0 ? `${countdown}s` : '发送验证码'}
             </Button>
           </div>
         </Form.Item>
