@@ -138,11 +138,19 @@ export default function TaskCreateModal({
           </Select>
         </Form.Item>
 
-        <Form.Item name="expectStartTime" label="期望开始时间">
+        <Form.Item
+          name="expectStartTime"
+          label="期望开始时间"
+          rules={[{ required: true, message: '请选择期望开始时间' }]}
+        >
           <DateTimePicker placeholder="选择期望开始时间" />
         </Form.Item>
 
-        <Form.Item name="expectEndTime" label="期望结束时间">
+        <Form.Item
+          name="expectEndTime"
+          label="期望结束时间"
+          rules={[{ required: true, message: '请选择期望结束时间' }]}
+        >
           <DateTimePicker placeholder="选择期望结束时间" />
         </Form.Item>
 

@@ -108,6 +108,7 @@ export default function Tasks({ projectId, onTabChange }: TasksProps) {
       {selectTab?.key === 'priority' && (
         <div className="flex-1 size-full flex flex-col overflow-hidden">
           <TaskTable
+            projectId={projectId}
             filteredTasks={filteredTasks || []}
             statusList={statusList || []}
             priorityList={priorityList || []}

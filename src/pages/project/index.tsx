@@ -164,6 +164,7 @@ export default function ProjectDetail({
             />
           )}
           <TaskTable
+            projectId={projectId}
             filteredTasks={filteredTasks || []}
             statusList={statusList || []}
             priorityList={priorityList || []}
