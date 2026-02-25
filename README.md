@@ -1,6 +1,51 @@
 # Todo Management
 
-一个基于 React 和 Rsbuild 的现代化待办事项管理应用。
+一个基于 React 和 Rsbuild 的现代化待办事项管理应用，支持多项目管理、看板视图、团队协作和实时同步功能。
+
+## 项目介绍
+
+Todo Management 是一个功能完整的任务管理系统，采用现代化前端技术栈构建。系统以项目为核心，每个项目作为独立的协作空间，支持自定义配置、团队协作和实时数据同步。通过看板视图提供直观的任务管理体验，支持拖拽操作和多种筛选条件。
+
+### 核心特性
+
+- **多项目管理**：项目作为顶层容器，支持独立的状态、优先级、分组配置
+- **看板视图**：拖拽式任务管理，支持跨列移动和同列排序
+- **团队协作**：支持成员邀请、角色权限管理
+- **离线支持**：基于 IndexedDB 的本地存储，支持离线使用
+- **实时同步**：Dexie Cloud 自动同步数据到云端
+- **权限控制**：基于 Realm 的项目级权限隔离
+
+## 技术栈
+
+### 核心框架
+
+- **React 19.2.3** - 现代化前端 UI 框架
+- **TypeScript 5.9.3** - 类型安全的 JavaScript 超集
+- **Rsbuild 1.6.14** - 基于 Rspack 的高性能构建工具
+
+### UI 组件库
+
+- **Ant Design 6.1.1** - 企业级 UI 设计语言和 React 组件库
+- **Tailwind CSS 4.1.18** - 实用优先的 CSS 框架
+- **@ant-design/icons** - Ant Design 图标库
+
+### 数据管理
+
+- **Dexie 4.2.1** - IndexedDB 的现代化封装
+- **Dexie Cloud 4.2.5** - 实时数据同步服务
+- **dexie-react-hooks** - Dexie 的 React Hooks 集成
+
+### 交互功能
+
+- **@dnd-kit** - 轻量级、高性能的拖拽库
+- **TipTap** - 无头富文本编辑器框架
+- **dayjs** - 轻量级日期处理库
+
+### 开发工具
+
+- **ESLint** - 代码质量检查
+- **Prettier** - 代码格式化工具
+- **gh-pages** - GitHub Pages 部署工具
 
 ## Setup
 
@@ -29,6 +74,330 @@ Preview the production build locally:
 ```bash
 pnpm run preview
 ```
+
+## 技术架构
+
+### 整体架构
+
+项目采用现代化的单页应用（SPA）架构，基于 React 构建前端界面，使用 Dexie 作为本地数据库，Dexie Cloud 提供云端同步和用户认证服务。
+
+```
+┌─────────────────────────────────────────────────┐
+│                   前端应用层                      │
+│  ┌──────────┐  ┌──────────┐  ┌──────────┐      │
+│  │ 项目管理  │  │ 看板视图  │  │ 配置管理  │      │
+│  └──────────┘  └──────────┘  └──────────┘      │
+└─────────────────────────────────────────────────┘
+                      ↓
+┌─────────────────────────────────────────────────┐
+│                  数据访问层                      │
+│  ┌──────────┐  ┌──────────┐  ┌──────────┐      │
+│  │ Service  │  │  Hooks   │  │ Utils    │      │
+│  └──────────┘  └──────────┘  └──────────┘      │
+└─────────────────────────────────────────────────┘
+                      ↓
+┌─────────────────────────────────────────────────┐
+│                  数据存储层                      │
+│  ┌──────────┐  ┌──────────┐  ┌──────────┐      │
+│  │  Dexie   │  │IndexedDB │  │Dexie Cloud│     │
+│  │  本地存储 │  │  浏览器DB │  │ 云端同步  │      │
+│  └──────────┘  └──────────┘  └──────────┘      │
+└─────────────────────────────────────────────────┘
+```
+
+### 项目中心架构
+
+系统采用**项目中心架构**，项目作为顶层容器，包含任务、配置和成员：
+
+```
+Project (项目)
+  ├── Tasks (任务)
+  ├── Config (配置)
+  │   ├── Status (状态)
+  │   ├── Priority (优先级)
+  │   └── Group (分组)
+  └── Members (成员)
+      └── Roles (角色)
+```
+
+### Realm 权限域机制
+
+每个项目对应一个 Dexie Cloud 的 Realm（权限域），实现项目级别的数据隔离：
+
+- **数据隔离**：不同项目的数据完全隔离，互不干扰
+- **权限控制**：通过 Realm 实现细粒度的访问控制
+- **成员管理**：项目成员通过 Realm 关联，支持不同角色权限
+
+### 数据同步机制
+
+基于 Dexie Cloud 的实时数据同步：
+
+1. **自动同步**：数据变更自动同步到云端
+2. **冲突解决**：Dexie Cloud 自动处理数据冲突
+3. **离线支持**：离线时数据存储在本地 IndexedDB，联网后自动同步
+4. **实时更新**：使用 Observable 模式实现数据实时响应
+
+## 数据库设计
+
+### 核心数据表
+
+系统包含 8 张核心数据表，分为业务数据表和权限管理表两类。
+
+#### 业务数据表
+
+**1. projects（项目表）**
+
+项目作为顶层容器，包含项目基本信息和权限域关联。
+
+| 字段名      | 类型   | 说明                     |
+| ----------- | ------ | ------------------------ |
+| id          | string | 项目唯一标识             |
+| name        | string | 项目名称                 |
+| description | string | 项目描述                 |
+| realmId     | string | 权限域 ID（Dexie Cloud） |
+| owner       | string | 项目所有者 ID            |
+| createTime  | string | 创建时间                 |
+| updateTime  | string | 更新时间                 |
+
+**2. tasks（任务表）**
+
+任务的核心数据，包含任务详情、时间、状态等信息。
+
+| 字段名          | 类型     | 说明               |
+| --------------- | -------- | ------------------ |
+| id              | string   | 任务唯一标识       |
+| name            | string   | 任务名称           |
+| content         | string   | 任务内容（富文本） |
+| projectId       | string   | 所属项目 ID        |
+| status          | string   | 任务状态 ID        |
+| priority        | string   | 任务优先级 ID      |
+| group           | string[] | 任务分组 ID 列表   |
+| assignee        | string   | 负责人 ID          |
+| isTop           | boolean  | 是否置顶           |
+| sort            | number   | 排序属性           |
+| isRemoved       | boolean  | 是否删除（软删除） |
+| expectStartTime | string   | 期望开始时间       |
+| expectEndTime   | string   | 期望结束时间       |
+| createTime      | string   | 创建时间           |
+| updateTime      | string   | 更新时间           |
+
+**3. statuses（状态表）**
+
+任务状态配置，支持项目级自定义。
+
+| 字段名    | 类型   | 说明         |
+| --------- | ------ | ------------ |
+| id        | string | 状态唯一标识 |
+| name      | string | 状态名称     |
+| color     | string | 状态颜色     |
+| sort      | number | 排序序号     |
+| projectId | string | 所属项目 ID  |
+
+**4. priorities（优先级表）**
+
+任务优先级配置，支持项目级自定义。
+
+| 字段名    | 类型   | 说明           |
+| --------- | ------ | -------------- |
+| id        | string | 优先级唯一标识 |
+| name      | string | 优先级名称     |
+| color     | string | 优先级颜色     |
+| sort      | number | 排序序号       |
+| projectId | string | 所属项目 ID    |
+
+**5. groups（分组表）**
+
+任务分组配置，支持项目级自定义。
+
+| 字段名    | 类型   | 说明         |
+| --------- | ------ | ------------ |
+| id        | string | 分组唯一标识 |
+| name      | string | 分组名称     |
+| color     | string | 分组颜色     |
+| sort      | number | 排序序号     |
+| projectId | string | 所属项目 ID  |
+
+#### 权限管理表
+
+**6. members（成员表）**
+
+项目成员信息，使用 Dexie Cloud 内置表结构。
+
+| 字段名       | 类型     | 说明                                  |
+| ------------ | -------- | ------------------------------------- |
+| id           | string   | 成员唯一标识（mmb 前缀）              |
+| userId       | string   | 用户 ID（Dexie Cloud 用户标识）       |
+| email        | string   | 成员邮箱                              |
+| name         | string   | 成员名称/别名                         |
+| realmId      | string   | 所属权限域 ID                         |
+| roles        | string[] | 角色列表                              |
+| permissions  | object   | 权限配置                              |
+| invite       | boolean  | 是否为邀请状态                        |
+| inviteStatus | string   | 邀请状态（pending/accepted/rejected） |
+| joinTime     | string   | 加入时间                              |
+
+**7. roles（角色表）**
+
+角色定义，使用 Dexie Cloud 内置表结构。
+
+| 字段名      | 类型   | 说明         |
+| ----------- | ------ | ------------ |
+| id          | string | 角色唯一标识 |
+| name        | string | 角色显示名称 |
+| description | string | 角色描述     |
+| permissions | any[]  | 权限列表     |
+
+**8. realms（权限域表）**
+
+权限域定义，使用 Dexie Cloud 内置表结构。
+
+| 字段名  | 类型   | 说明           |
+| ------- | ------ | -------------- |
+| realmId | string | 权限域唯一标识 |
+| name    | string | 权限域名称     |
+| owner   | string | 权限域所有者   |
+
+### 数据表关系
+
+```
+Project (1) ←→ (N) Task
+Project (1) ←→ (N) Status
+Project (1) ←→ (N) Priority
+Project (1) ←→ (N) Group
+Project (1) ←→ (1) Realm
+Realm (1) ←→ (N) Member
+Member (N) ←→ (N) Role
+
+Task (N) ←→ (1) Status
+Task (N) ←→ (1) Priority
+Task (N) ←→ (N) Group
+Task (N) ←→ (1) Member (assignee)
+```
+
+## 登录验证设计
+
+### 认证方式
+
+系统采用 **邮箱 OTP（一次性密码）** 登录方式，基于 Dexie Cloud 提供的认证服务：
+
+1. **发送验证码**：用户输入邮箱，系统发送 6 位数字验证码到邮箱
+2. **验证登录**：用户输入验证码，系统验证后完成登录
+3. **Token 管理**：Dexie Cloud 自动管理访问令牌和刷新令牌
+4. **状态保持**：刷新页面后自动恢复登录状态
+
+### 登录流程
+
+```
+用户输入邮箱
+    ↓
+点击"发送验证码"
+    ↓
+系统调用 Dexie Cloud API 发送 OTP
+    ↓
+用户收到邮件，输入验证码
+    ↓
+点击"登录"按钮
+    ↓
+Dexie Cloud 验证 OTP
+    ↓
+登录成功，获取用户信息和 Token
+    ↓
+自动同步项目数据
+```
+
+### 角色权限体系
+
+系统定义了四种角色，每种角色拥有不同的权限：
+
+#### 1. Owner（所有者）
+
+- **权限范围**：完全管理权限
+- **能力**：
+  - 管理项目所有配置
+  - 邀请/移除成员
+  - 分配成员角色
+  - 删除项目
+  - 创建/编辑/删除所有任务
+
+#### 2. Admin（管理员）
+
+- **权限范围**：项目管理权限
+- **能力**：
+  - 管理项目配置（状态、优先级、分组）
+  - 邀请/移除成员
+  - 创建/编辑/删除所有任务
+
+#### 3. Member（成员）
+
+- **权限范围**：任务管理权限
+- **能力**：
+  - 创建新任务
+  - 编辑自己创建的任务
+  - 查看所有任务
+
+#### 4. Guest（访客）
+
+- **权限范围**：只读权限
+- **能力**：
+  - 查看项目任务
+  - 查看项目配置
+  - 无编辑权限
+
+### 权限配置实现
+
+权限通过 Dexie Cloud 的权限系统实现，配置示例：
+
+```typescript
+const ROLE_PERMISSIONS = {
+  owner: {
+    add: '*', // 允许添加所有表
+    update: '*', // 允许更新所有字段
+    manage: '*', // 完全管理权限
+  },
+  admin: {
+    add: '*',
+    update: '*',
+    manage: '*', // 完全管理权限
+  },
+  member: {
+    add: ['tasks'], // 可以创建任务
+    update: {
+      tasks: ['name', 'description', 'status', 'priority', 'assignee'],
+    },
+    // 不授予 manage 权限，只能编辑自己的任务
+  },
+  guest: {
+    // 访客只有查看权限，无编辑权限
+  },
+}
+```
+
+### 邀请机制
+
+系统支持邀请成员加入项目：
+
+1. **邀请流程**：
+   - 项目管理员输入被邀请人邮箱
+   - 系统创建成员记录（invite: true）
+   - 被邀请人登录后看到邀请通知
+   - 被邀请人接受/拒绝邀请
+
+2. **邀请状态**：
+   - `pending`：待处理
+   - `accepted`：已接受
+   - `rejected`：已拒绝
+
+3. **权限继承**：
+   - 邀请时指定角色
+   - 接受邀请后自动获得对应权限
+   - 权限立即可用，无需手动配置
+
+### 安全机制
+
+- **Token 自动刷新**：Dexie Cloud 自动管理令牌生命周期
+- **登录状态持久化**：存储在 IndexedDB，刷新后自动恢复
+- **权限验证**：每次数据操作都会验证权限
+- **数据加密**：敏感数据传输使用 HTTPS 加密
 
 ## 功能特性
 
@@ -159,14 +528,3 @@ pnpm run preview
 - 插件式功能扩展
 - 主题定制
 - 状态流程自定义
-
-## 使用文档
-
-详细的使用说明请查看 [看板使用说明](./docs/看板使用说明.md)。
-
-## Learn more
-
-To learn more about Rsbuild, check out the following resources:
-
-- [Rsbuild documentation](https://rsbuild.rs) - explore Rsbuild features and APIs.
-- [Rsbuild GitHub repository](https://github.com/web-infra-dev/rsbuild) - your feedback and contributions are welcome!
