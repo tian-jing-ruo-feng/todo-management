@@ -84,9 +84,12 @@ export default function TaskDetailModal({
           priorityRepository.getAll(task?.projectId),
           groupRepository.getAll(task?.projectId),
         ])
-        setStatusOptions(statuses)
-        setPriorityOptions(priorities)
-        setGroupOptions(groups)
+        // 按 sort 字段正序排列
+        setStatusOptions(statuses.sort((a, b) => (a.sort || 0) - (b.sort || 0)))
+        setPriorityOptions(
+          priorities.sort((a, b) => (a.sort || 0) - (b.sort || 0))
+        )
+        setGroupOptions(groups.sort((a, b) => (a.sort || 0) - (b.sort || 0)))
       } catch (error) {
         console.error('加载配置数据失败:', error)
       }
@@ -175,7 +178,11 @@ export default function TaskDetailModal({
           <Input placeholder="输入任务名称" disabled={!canEdit} />
         </Form.Item>
 
-        <Form.Item name="status" label="状态">
+        <Form.Item
+          name="status"
+          label="状态"
+          rules={[{ required: true, message: '请选择任务状态' }]}
+        >
           <Select placeholder="选择任务状态" disabled={!canEdit}>
             {statusOptions.map((status) => (
               <Select.Option key={status.id} value={status.id}>
@@ -185,7 +192,11 @@ export default function TaskDetailModal({
           </Select>
         </Form.Item>
 
-        <Form.Item name="priority" label="优先级">
+        <Form.Item
+          name="priority"
+          label="优先级"
+          rules={[{ required: true, message: '请选择优先级' }]}
+        >
           <Select placeholder="选择优先级" disabled={!canEdit}>
             {priorityOptions.map((priority) => (
               <Select.Option key={priority.id} value={priority.id}>

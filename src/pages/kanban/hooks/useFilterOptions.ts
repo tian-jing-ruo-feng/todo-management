@@ -7,15 +7,15 @@ import { useLiveQuery } from 'dexie-react-hooks'
 export function useFilterOptions(projectId?: string) {
   const statusList = useLiveQuery(
     async () => {
-      const allStatuses = await db.statuses.toArray()
-
       if (projectId) {
         return await db.statuses
           .where('projectId')
           .equals(projectId)
-          .toArray()
+          .sortBy('sort')
       }
-      return allStatuses
+      return (await db.statuses.toArray()).sort(
+        (a, b) => (a.sort || 0) - (b.sort || 0)
+      )
     },
     [projectId],
     []
@@ -23,15 +23,15 @@ export function useFilterOptions(projectId?: string) {
 
   const priorityList = useLiveQuery(
     async () => {
-      const allPriorities = await db.priorities.toArray()
-
       if (projectId) {
         return await db.priorities
           .where('projectId')
           .equals(projectId)
-          .toArray()
+          .sortBy('sort')
       }
-      return allPriorities
+      return (await db.priorities.toArray()).sort(
+        (a, b) => (a.sort || 0) - (b.sort || 0)
+      )
     },
     [projectId],
     []
@@ -40,9 +40,13 @@ export function useFilterOptions(projectId?: string) {
   const groupList = useLiveQuery(
     async () => {
       if (projectId) {
-        return db.groups.where('projectId').equals(projectId).toArray()
+        return (
+          await db.groups.where('projectId').equals(projectId).toArray()
+        ).sort((a, b) => (a.sort || 0) - (b.sort || 0))
       }
-      return db.groups.toArray()
+      return (await db.groups.toArray()).sort(
+        (a, b) => (a.sort || 0) - (b.sort || 0)
+      )
     },
     [projectId],
     []

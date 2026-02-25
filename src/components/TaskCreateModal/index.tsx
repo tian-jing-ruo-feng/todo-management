@@ -1,6 +1,6 @@
 import type { Task } from '@/types/Task'
 import { Form, Input, Modal, Select, Switch } from 'antd'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useFilterOptions } from '../../pages/kanban/hooks/useFilterOptions'
 import DateTimePicker from '../DateTimePicker'
 import MemberSelector from '../MemberSelector'
@@ -26,6 +26,22 @@ export default function TaskCreateModal({
   const [loading, setLoading] = useState(false)
   const { statusList, priorityList, groupList } = useFilterOptions(projectId)
 
+  // 设置默认值
+  useEffect(() => {
+    if (
+      visible &&
+      statusList &&
+      statusList.length > 0 &&
+      priorityList &&
+      priorityList.length > 0
+    ) {
+      form.setFieldsValue({
+        status: defaultStatus || statusList[0].id,
+        priority: priorityList[0].id,
+      })
+    }
+  }, [visible, statusList, priorityList, defaultStatus, form])
+
   const handleOk = async () => {
     try {
       setLoading(true)
@@ -43,8 +59,8 @@ export default function TaskCreateModal({
         updateTime: new Date().toISOString(),
         isRemoved: false,
         isTop: values.isTop || false,
-        expectStartTime: values.expectStartTime || null,
-        expectEndTime: values.expectEndTime || null,
+        expectStartTime: values.expectStartTime || undefined,
+        expectEndTime: values.expectEndTime || undefined,
         sort: 0, // 默认排序值，后续会在KanbanBoard中重新计算
         assignee: values.assignee,
       }
@@ -94,7 +110,11 @@ export default function TaskCreateModal({
           <Input placeholder="输入任务名称" />
         </Form.Item>
 
-        <Form.Item name="status" label="状态">
+        <Form.Item
+          name="status"
+          label="状态"
+          rules={[{ required: true, message: '请选择任务状态' }]}
+        >
           <Select placeholder="选择任务状态">
             {statusList?.map((status) => (
               <Select.Option key={status.id} value={status.id}>
@@ -104,7 +124,11 @@ export default function TaskCreateModal({
           </Select>
         </Form.Item>
 
-        <Form.Item name="priority" label="优先级">
+        <Form.Item
+          name="priority"
+          label="优先级"
+          rules={[{ required: true, message: '请选择优先级' }]}
+        >
           <Select placeholder="选择优先级">
             {priorityList?.map((priority) => (
               <Select.Option key={priority.id} value={priority.id}>
