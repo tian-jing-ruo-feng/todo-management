@@ -93,30 +93,29 @@ export default function MemberSelector({
       disabled={disabled}
       style={{ width: '100%' }}
       showSearch
-      filterOption={(input, option) =>
-        (option?.label?.toString() ?? '')
-          .toLowerCase()
-          .includes(input.toLowerCase())
-      }
-      options={members.map((member) => ({
-        value: member.id,
-        label: (
+      optionRender={(option) => {
+        const member = members.find((m) => m.id === option.value)
+        return (
           <div className="flex items-center gap-2">
             <Avatar
               size="small"
               icon={<UserOutlined />}
               style={{
-                backgroundColor: member.isOwner ? '#6253e1' : '#04befe',
+                backgroundColor: member?.isOwner ? '#6253e1' : '#04befe',
               }}
             >
-              {member.name?.charAt(0).toUpperCase()}
+              {member?.name?.charAt(0).toUpperCase()}
             </Avatar>
-            <span>{member.name}</span>
-            {member.isOwner && (
+            <span>{member?.name}</span>
+            {member?.isOwner && (
               <span className="text-xs text-purple-500">(所有者)</span>
             )}
           </div>
-        ),
+        )
+      }}
+      options={members.map((member) => ({
+        value: member.id,
+        label: member.name,
       }))}
     />
   )
