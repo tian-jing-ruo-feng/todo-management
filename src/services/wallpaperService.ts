@@ -4,12 +4,14 @@ import type {
   WallpaperSettings,
 } from '@/types/wallpaper'
 import { DEFAULT_WALLPAPER_SETTINGS } from '@/types/wallpaper'
-import { jsonp } from '@/utils/jsonp'
 
 const STORAGE_KEY = 'wallpaper_settings'
-// Bing API URL (使用 JSONP 方式，无需代理)
-const BING_API_URL = 'https://www.bing.com/HPImageArchive.aspx?format=js&idx=0&n=8'
+// Bing API URL
+const BING_API_URL =
+  'https://www.bing.com/HPImageArchive.aspx?format=js&idx=0&n=8'
 const BING_CDN_URL = 'https://www.bing.com'
+// CORS 代理服务
+const CORS_PROXY_URL = 'https://api.allorigins.win/get?url='
 
 /**
  * 壁纸服务
@@ -18,11 +20,21 @@ const BING_CDN_URL = 'https://www.bing.com'
 export class WallpaperService {
   /**
    * 获取 Bing 壁纸列表
-   * 使用 JSONP 方式解决 CORS 问题
+   * 使用 CORS 代理解决跨域问题
    */
   static async fetchBingWallpapers(): Promise<BingWallpaper[]> {
     try {
-      const data: BingApiResponse = await jsonp(BING_API_URL, 'jsonp')
+      // 通过 CORS 代理获取数据
+      const proxyUrl = `${CORS_PROXY_URL}${encodeURIComponent(BING_API_URL)}`
+      const response = await fetch(proxyUrl)
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`)
+      }
+
+      const proxyData = await response.json()
+      // allorigins 返回的数据在 contents 字段中
+      const data: BingApiResponse = JSON.parse(proxyData.contents)
 
       // 转换为统一的壁纸格式，并拼接完整 URL
       return data.images.map((img) => ({
