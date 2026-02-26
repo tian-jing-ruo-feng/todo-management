@@ -2,7 +2,12 @@
 .DS_Store
 *.local
 *.log*
+
+# Environment variables
 .env
+.env.local
+.env.production
+.env.*.local
 
 # Dist
 node_modules
@@ -16,5 +21,9 @@ dist/
 !.vscode/extensions.json
 .idea
 .codebuddy
+
+# Sensitive files
 dexie-cloud.json
 dexie-cloud.key
+*.key
+*.pem
