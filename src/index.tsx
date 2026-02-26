@@ -3,6 +3,7 @@ import ReactDOM from 'react-dom/client'
 import { ConfigProvider } from 'antd'
 import zhCN from 'antd/locale/zh_CN'
 import PageLayout from './layout/index'
+import { WallpaperProvider } from './contexts/WallpaperContext'
 import './index.css'
 
 const rootEl = document.getElementById('root')
@@ -12,7 +13,9 @@ if (rootEl) {
   root.render(
     <React.StrictMode>
       <ConfigProvider locale={zhCN}>
-        <PageLayout />
+        <WallpaperProvider>
+          <PageLayout />
+        </WallpaperProvider>
       </ConfigProvider>
     </React.StrictMode>
   )

@@ -8,6 +8,12 @@ body,
   overflow: hidden;
 }
 
+/* 壁纸背景层透明 */
+.ant-layout,
+.ant-layout-content {
+  background-color: transparent !important;
+}
+
 /* 确保表格分页器始终在底部 */
 .ant-table-wrapper {
   height: 100%;

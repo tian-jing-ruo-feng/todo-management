@@ -4,6 +4,15 @@ import { pluginReact } from '@rsbuild/plugin-react'
 import pkg from './package.json'
 export default defineConfig({
   plugins: [pluginReact()],
+  server: {
+    proxy: {
+      '/api/bing': {
+        target: 'https://www.bing.com',
+        changeOrigin: true,
+        pathRewrite: { '^/api/bing': '' },
+      },
+    },
+  },
   source: {
     // 将 VITE_ 前缀的环境变量注入到前端代码
     define: {

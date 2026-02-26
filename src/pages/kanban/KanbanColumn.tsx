@@ -1,7 +1,8 @@
 import type { Task } from '@/types/Task'
 import { useDroppable } from '@dnd-kit/core'
 import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable'
-import { Card, Typography } from 'antd'
+import { Typography } from 'antd'
+import WallpaperCard from '@/components/WallpaperCard'
 import KanbanItem from './KanbanItem'
 
 const { Title } = Typography
@@ -29,11 +30,9 @@ export default function KanbanColumn({
 
   return (
     <div className="flex-1 min-w-[300px] max-w-[350px]  relative size-full">
-      <Card
+      <WallpaperCard
         className={`size-full transition-all duration-300 flex flex-col  ${
-          isOver
-            ? 'border-blue-500 shadow-xl bg-white/90'
-            : 'border-gray-200 bg-white hover:shadow-md'
+          isOver ? 'border-blue-500 shadow-xl' : 'border-gray-200 hover:shadow-md'
         }`}
         classNames={{ body: 'size-full overflow-hidden' }}
         title={
@@ -86,7 +85,7 @@ export default function KanbanColumn({
             )}
           </div>
         </div>
-      </Card>
+      </WallpaperCard>
     </div>
   )
 }

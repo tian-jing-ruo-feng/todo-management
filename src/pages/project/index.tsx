@@ -196,7 +196,7 @@ export default function ProjectDetail({
   ]
 
   return (
-    <div className="flex flex-col size-full overflow-hidden">
+    <div className="flex flex-col size-full overflow-hidden gap-3">
       {/* 头部信息 */}
       <Card className="mb-4">
         <div className="flex justify-between items-start">

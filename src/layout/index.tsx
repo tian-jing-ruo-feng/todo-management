@@ -2,6 +2,7 @@ import { Layout, message } from 'antd'
 import { useEffect, useState } from 'react'
 import { initConfigData } from '@/utils/initConfigData'
 import { useUser } from '@/hooks/useUser'
+import { useWallpaper } from '@/contexts/useWallpaper'
 import Tasks from '../pages/tasks'
 import ProjectsPage from '../pages/projects'
 import ProjectDetail from '../pages/project'
@@ -25,6 +26,7 @@ export default function PageLayout() {
   const [currentView, setCurrentView] = useState<ViewType>('tasks')
   const [manualLogin, setManualLogin] = useState(false)
   const { isLoggedIn: userLoggedIn, isLoading, isRestoring } = useUser()
+  const { settings: wallpaperSettings } = useWallpaper()
 
   // 派生状态：判断是否应该显示登录框
   // 条件1：用户手动点击登录按钮
@@ -99,33 +101,52 @@ export default function PageLayout() {
   }
 
   return (
-    <Layout className="flex flex-col size-full">
-      <Header className="bg-linear-[135deg,#6253e1,#04befe]!">
-        <div className="flex justify-between items-center h-full leading-none">
-          <div className="font-bold text-2xl text-white">TaskFlow</div>
-          <div className="flex-1 flex justify-end">
-            <div className="flex items-center gap-4">
-              {userLoggedIn && currentView === 'project-detail' && (
-                <ProjectSelector
-                  currentProjectId={currentProjectId}
-                  onProjectChange={setCurrentProjectId}
-                />
-              )}
-            </div>
-            <div className="flex items-center gap-3">
-              {userLoggedIn && <InviteNotification />}
-              <UserInfo onLogin={handleLogin} />
+    <>
+      {/* 背景壁纸层 */}
+      {wallpaperSettings.enabled && wallpaperSettings.currentUrl && (
+        <div
+          className="fixed inset-0 z-0"
+          style={{
+            backgroundImage: `url(${wallpaperSettings.currentUrl})`,
+            backgroundSize: 'cover',
+            backgroundPosition: 'center',
+            backgroundRepeat: 'no-repeat',
+            filter: `blur(${wallpaperSettings.blur}px) brightness(${wallpaperSettings.brightness})`,
+            transform: 'scale(1.1)', // 放大以避免边缘模糊出现白边
+          }}
+        />
+      )}
+
+      <Layout className="relative z-10 flex flex-col size-full bg-transparent!">
+        <Header className="bg-linear-[135deg,#6253e1,#04befe]!">
+          <div className="flex justify-between items-center h-full leading-none">
+            <div className="font-bold text-2xl text-white">TaskFlow</div>
+            <div className="flex-1 flex justify-end">
+              <div className="flex items-center gap-4">
+                {userLoggedIn && currentView === 'project-detail' && (
+                  <ProjectSelector
+                    currentProjectId={currentProjectId}
+                    onProjectChange={setCurrentProjectId}
+                  />
+                )}
+              </div>
+              <div className="flex items-center gap-3">
+                {userLoggedIn && <InviteNotification />}
+                <UserInfo onLogin={handleLogin} />
+              </div>
             </div>
           </div>
-        </div>
-      </Header>
-      <Content className="flex-1 overflow-y-auto">{renderContent()}</Content>
-      {/* <Footer className="text-center bg-black!">Footer</Footer> */}
-      <MyLoginGUI
-        isLogin={shouldShowLogin}
-        onLoginSuccess={handleClose}
-        onClose={handleClose}
-      />
-    </Layout>
+        </Header>
+        <Content className="flex-1 overflow-y-auto bg-transparent!">
+          {renderContent()}
+        </Content>
+        {/* <Footer className="text-center bg-black!">Footer</Footer> */}
+        <MyLoginGUI
+          isLogin={shouldShowLogin}
+          onLoginSuccess={handleClose}
+          onClose={handleClose}
+        />
+      </Layout>
+    </>
   )
 }

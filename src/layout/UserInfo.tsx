@@ -1,16 +1,20 @@
 import { Button, Dropdown, message, Spin } from 'antd'
 import type { MenuProps } from 'antd'
-import { UserOutlined, LogoutOutlined } from '@ant-design/icons'
+import { UserOutlined, LogoutOutlined, PictureOutlined } from '@ant-design/icons'
 import db from '../utils/db'
 import { useUser } from '@/hooks/useUser'
+import { useWallpaper } from '@/contexts/useWallpaper'
 import { useState } from 'react'
 import ProfileModal from '@/components/ProfileModal'
+import WallpaperModal from '@/components/WallpaperModal'
 import { useLiveQuery } from 'dexie-react-hooks'
 
 export default function UserInfo(props: { onLogin: () => void }) {
   const { onLogin } = props
   const { user, isLoggedIn: userLoggedIn, isLoading } = useUser()
+  const { settings: wallpaperSettings, updateSettings: updateWallpaperSettings, resetSettings: resetWallpaperSettings } = useWallpaper()
   const [profileModalVisible, setProfileModalVisible] = useState(false)
+  const [wallpaperModalVisible, setWallpaperModalVisible] = useState(false)
 
   // 从成员记录中获取用户别名（优先显示）
   const memberName = useLiveQuery(async () => {
@@ -41,6 +45,8 @@ export default function UserInfo(props: { onLogin: () => void }) {
       }
     } else if (e.key === 'profile') {
       setProfileModalVisible(true)
+    } else if (e.key === 'wallpaper') {
+      setWallpaperModalVisible(true)
     }
   }
 
@@ -49,6 +55,11 @@ export default function UserInfo(props: { onLogin: () => void }) {
       key: 'profile',
       label: '个人中心',
       icon: <UserOutlined />,
+    },
+    {
+      key: 'wallpaper',
+      label: '壁纸设置',
+      icon: <PictureOutlined />,
     },
     {
       key: 'logout',
@@ -92,6 +103,14 @@ export default function UserInfo(props: { onLogin: () => void }) {
       <ProfileModal
         visible={profileModalVisible}
         onClose={() => setProfileModalVisible(false)}
+      />
+
+      <WallpaperModal
+        visible={wallpaperModalVisible}
+        onClose={() => setWallpaperModalVisible(false)}
+        settings={wallpaperSettings}
+        onUpdateSettings={updateWallpaperSettings}
+        onResetSettings={resetWallpaperSettings}
       />
     </div>
   )
