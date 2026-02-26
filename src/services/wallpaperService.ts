@@ -4,13 +4,11 @@ import type {
   WallpaperSettings,
 } from '@/types/wallpaper'
 import { DEFAULT_WALLPAPER_SETTINGS } from '@/types/wallpaper'
+import { jsonp } from '@/utils/jsonp'
 
 const STORAGE_KEY = 'wallpaper_settings'
-// 开发环境使用代理，生产环境直接访问
-const BING_API_URL =
-  import.meta.env.DEV
-    ? '/api/bing/HPImageArchive.aspx?format=js&idx=0&n=8'
-    : 'https://www.bing.com/HPImageArchive.aspx?format=js&idx=0&n=8'
+// Bing API URL (使用 JSONP 方式，无需代理)
+const BING_API_URL = 'https://www.bing.com/HPImageArchive.aspx?format=js&idx=0&n=8'
 const BING_CDN_URL = 'https://www.bing.com'
 
 /**
@@ -20,16 +18,11 @@ const BING_CDN_URL = 'https://www.bing.com'
 export class WallpaperService {
   /**
    * 获取 Bing 壁纸列表
+   * 使用 JSONP 方式解决 CORS 问题
    */
   static async fetchBingWallpapers(): Promise<BingWallpaper[]> {
     try {
-      const response = await fetch(BING_API_URL)
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`)
-      }
-
-      const data: BingApiResponse = await response.json()
+      const data: BingApiResponse = await jsonp(BING_API_URL, 'jsonp')
 
       // 转换为统一的壁纸格式，并拼接完整 URL
       return data.images.map((img) => ({
