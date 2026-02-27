@@ -5,6 +5,7 @@
   "type": "module",
   "scripts": {
     "build": "rsbuild build",
+    "build:tjrftop": "rsbuild build --env-mode tjrftop",
     "dev": "rsbuild dev --open",
     "format": "prettier --write .",
     "format:check": "prettier --check .",

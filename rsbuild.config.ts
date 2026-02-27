@@ -2,7 +2,25 @@ import { defineConfig } from '@rsbuild/core'
 import { pluginReact } from '@rsbuild/plugin-react'
 // Docs: https://rsbuild.rs/config/
 import pkg from './package.json'
-export default defineConfig({
+
+// 根据环境模式动态设置 assetPrefix
+const getAssetPrefix = (env, envMode) => {
+  const mode = envMode || env
+
+  if (mode === process.env.VITE_ENV_MODE) {
+    return process.env.VITE_BASE_URL
+  }
+
+  // github -> /todo-management/
+  if (mode === 'production') {
+    return '/todo-management/'
+  }
+
+  // 开发环境 -> /
+  return '/'
+}
+
+export default defineConfig(({ env, envMode }) => ({
   plugins: [pluginReact()],
   server: {
     proxy: {
@@ -33,7 +51,6 @@ export default defineConfig({
     title: pkg.name,
   },
   output: {
-    assetPrefix:
-      process.env.NODE_ENV === 'production' ? '/todo-management/' : '/',
+    assetPrefix: getAssetPrefix(env, envMode),
   },
-})
+}))
