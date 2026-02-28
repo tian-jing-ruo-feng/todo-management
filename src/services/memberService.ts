@@ -1,7 +1,7 @@
+import React from 'react'
 import db from '@/utils/db'
 import type { DBRealmMember, Invite } from 'dexie-cloud-addon'
-import { useLiveQuery } from 'dexie-react-hooks'
-import { useObservable } from 'dexie-react-hooks'
+import { useLiveQuery, useObservable } from 'dexie-react-hooks'
 
 /**
  * 角色权限映射
@@ -24,7 +24,16 @@ const ROLE_PERMISSIONS: Record<string, DBRealmMember['permissions']> = {
   member: {
     add: ['tasks'], // 可以创建任务
     update: {
-      tasks: ['name', 'description', 'status', 'priority', 'groupId', 'assignee', 'dueDate', 'tags'], // 只能更新自己拥有的任务
+      tasks: [
+        'name',
+        'description',
+        'status',
+        'priority',
+        'groupId',
+        'assignee',
+        'dueDate',
+        'tags',
+      ], // 只能更新自己拥有的任务
     },
     // 注意：不授予 manage 权限，成员只能编辑 owner 是自己的任务
   },
@@ -117,7 +126,7 @@ export class MemberService {
 
   /**
    * 接受邀请
-   * 使用 Dexie Cloud 内置的邀请处理机制
+   * 直接更新数据库，不依赖 invite 对象的方法
    */
   static async acceptInvite(invite: Invite): Promise<void> {
     // 保存邀请信息，用于接受后恢复权限
@@ -126,8 +135,8 @@ export class MemberService {
     const targetPermissions =
       invitePermissions || ROLE_PERMISSIONS[inviteRoles?.[0] || 'member']
 
-    // 使用 Dexie Cloud 内置的 accept 方法
-    await invite.accept()
+    // 直接更新数据库，设置 accepted 字段
+    await db.members.update(invite.id, { accepted: new Date() })
 
     // 触发同步，获取项目数据
     await db.cloud.sync()
@@ -143,10 +152,11 @@ export class MemberService {
 
   /**
    * 拒绝邀请
-   * 使用 Dexie Cloud 内置的邀请处理机制
+   * 直接更新数据库，不依赖 invite 对象的方法
    */
   static async rejectInvite(invite: Invite): Promise<void> {
-    await invite.reject()
+    // 直接更新数据库，设置 rejected 字段
+    await db.members.update(invite.id, { rejected: new Date() })
     // 触发同步，确保拒绝操作生效
     await db.cloud.sync()
   }
@@ -281,8 +291,7 @@ export class MemberService {
 
       const currentMember = members.find(
         (m) =>
-          m.userId === currentUser?.userId ||
-          m.email === currentUser?.email
+          m.userId === currentUser?.userId || m.email === currentUser?.email
       )
 
       if (currentMember) {
@@ -305,9 +314,7 @@ export class MemberService {
           )
         }
       } else {
-        console.log(
-          '[diagnoseTaskPermission] ❌ 当前用户不是该 realm 的成员'
-        )
+        console.log('[diagnoseTaskPermission] ❌ 当前用户不是该 realm 的成员')
       }
     } else {
       console.log('[diagnoseTaskPermission] ⚠️ 任务没有 realmId')
@@ -327,16 +334,18 @@ export function useProjectMembers(projectId: string | undefined) {
 
 /**
  * Hook: 获取用户的待处理邀请
- * 使用 Dexie Cloud 内置的 db.cloud.invites Observable
- * 返回的邀请对象包含 accept() 和 reject() 方法
+ * 返回纯数据对象，不包含函数方法（避免 DataCloneError）
  * 注意：Dexie Cloud 的 db.cloud.invites 只过滤了 accepted 的邀请，
  *       我们需要额外过滤掉 rejected 的邀请
  */
 export function useUserInvites() {
-  // 使用 Dexie Cloud 提供的 db.cloud.invites Observable
-  // 它返回包含 accept 和 reject 方法的 Invite 对象
   const allInvites = useObservable(db.cloud.invites)
 
-  // 过滤掉已拒绝的邀请（Dexie Cloud 只过滤了 accepted，没有过滤 rejected）
-  return allInvites?.filter((invite) => !invite.rejected)
+  // 过滤掉已拒绝的邀请，返回纯数据对象（移除 accept/reject 方法）
+  return React.useMemo(() => {
+    if (!allInvites) return []
+    return allInvites
+      .filter((invite) => !invite.rejected)
+      .map(({ accept, reject, ...rest }) => rest as Invite)
+  }, [allInvites])
 }
