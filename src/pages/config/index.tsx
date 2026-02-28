@@ -14,6 +14,7 @@ import {
 import db from '@/utils/db'
 import {
   DownloadOutlined,
+  EllipsisOutlined,
   FlagOutlined,
   GroupOutlined,
   PlusOutlined,
@@ -22,7 +23,17 @@ import {
   UploadOutlined,
 } from '@ant-design/icons'
 import { arrayMove } from '@dnd-kit/sortable'
-import { Alert, Button, Card, Empty, Spin, Upload, message } from 'antd'
+import {
+  Alert,
+  Button,
+  Card,
+  Dropdown,
+  Empty,
+  Grid,
+  Spin,
+  Upload,
+  message,
+} from 'antd'
 import dayjs from 'dayjs'
 import React, { useEffect, useState } from 'react'
 import { downloadFile } from '../../utils/common'
@@ -62,6 +73,10 @@ export default function ConfigPage({ projectId }: ConfigPageProps) {
   // 导入相关
   const [uploading, setUploading] = useState(false)
   const [isExporting, setIsExporting] = useState(false)
+
+  // 响应式检测
+  const screens = Grid.useBreakpoint()
+  const isSmallScreen = !screens.md // <768px
 
   // 初始化加载
   useEffect(() => {
@@ -443,6 +458,35 @@ export default function ConfigPage({ projectId }: ConfigPageProps) {
     return true
   }
 
+  // 更多操作菜单（小屏模式）
+  const moreMenuItems = [
+    {
+      key: 'import',
+      label: '导入JSON',
+      icon: <UploadOutlined />,
+      disabled: !canManage || uploading,
+      onClick: () => {
+        const input = document.createElement('input')
+        input.type = 'file'
+        input.accept = '.json'
+        input.onchange = (e) => {
+          const file = (e.target as HTMLInputElement).files?.[0]
+          if (file && beforeUpload(file)) {
+            handleImport(file)
+          }
+        }
+        input.click()
+      },
+    },
+    {
+      key: 'export',
+      label: '导出JSON',
+      icon: <DownloadOutlined />,
+      disabled: !canManage,
+      onClick: handleExport,
+    },
+  ]
+
   return (
     <div className="flex flex-col flex-1 gap-4 size-full overflow-hidden">
       {/* 无权限提示 */}
@@ -456,34 +500,48 @@ export default function ConfigPage({ projectId }: ConfigPageProps) {
       )}
 
       <Card classNames={{ body: 'p-3!' }}>
-        <div className="flex justify-between items-center">
+        <div
+          className={`flex justify-between items-center ${isSmallScreen ? 'flex-wrap gap-2' : ''}`}
+        >
           <ConfigTabs activeKey={activeKey} onChange={handleTabChange} />
           <div className="flex gap-2">
-            <Upload
-              accept=".json"
-              showUploadList={false}
-              beforeUpload={beforeUpload}
-              customRequest={({ file }) => handleImport(file as File)}
-              disabled={uploading || !canManage}
-              maxCount={1}
-            >
-              <Button
-                icon={<UploadOutlined />}
-                loading={uploading}
-                disabled={!canManage}
-              >
-                导入JSON
-              </Button>
-            </Upload>
-            <Button
-              type="default"
-              icon={<DownloadOutlined />}
-              loading={isExporting}
-              onClick={handleExport}
-              disabled={!canManage}
-            >
-              导出JSON
-            </Button>
+            {/* 大屏模式：显示所有按钮 */}
+            {!isSmallScreen && (
+              <>
+                <Upload
+                  accept=".json"
+                  showUploadList={false}
+                  beforeUpload={beforeUpload}
+                  customRequest={({ file }) => handleImport(file as File)}
+                  disabled={uploading || !canManage}
+                  maxCount={1}
+                >
+                  <Button
+                    icon={<UploadOutlined />}
+                    loading={uploading}
+                    disabled={!canManage}
+                  >
+                    导入JSON
+                  </Button>
+                </Upload>
+                <Button
+                  type="default"
+                  icon={<DownloadOutlined />}
+                  loading={isExporting}
+                  onClick={handleExport}
+                  disabled={!canManage}
+                >
+                  导出JSON
+                </Button>
+              </>
+            )}
+            {/* 小屏模式：更多操作下拉菜单 */}
+            {isSmallScreen && (
+              <Dropdown menu={{ items: moreMenuItems }} trigger={['click']}>
+                <Button icon={<EllipsisOutlined />}>更多</Button>
+              </Dropdown>
+            )}
+            {/* 新增配置按钮（始终显示） */}
             <Button
               type="primary"
               icon={<PlusOutlined />}
