@@ -165,7 +165,7 @@ export default function ConfigList({
           components={{
             body: { row: Row },
           }}
-          scroll={{ y: 'calc(100% - 64px)' }} // 减去分页器高度
+          scroll={{ x: 'max-content', y: 'calc(100% - 64px)' }} // 减去分页器高度
           columns={columns}
           dataSource={data}
           rowKey="id"

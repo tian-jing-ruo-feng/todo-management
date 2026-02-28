@@ -289,7 +289,7 @@ export default function TaskTable({
       bordered
       rowKey="id"
       columns={columns}
-      scroll={{ y: 'calc(100% - 64px)' }} // 减去分页器高度
+      scroll={{ x: 'max-content', y: 'calc(100% - 64px)' }} // 减去分页器高度
       dataSource={filteredTasks}
       rowSelection={{ type: 'checkbox', ...rowSelection }}
       pagination={{

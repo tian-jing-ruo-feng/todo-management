@@ -269,6 +269,7 @@ export default function MemberManagement({ projectId }: MemberManagementProps) {
         columns={columns}
         rowKey="id"
         pagination={false}
+        scroll={{ x: 'max-content' }}
       />
 
       <InviteModal
