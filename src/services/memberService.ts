@@ -147,6 +147,8 @@ export class MemberService {
    */
   static async rejectInvite(invite: Invite): Promise<void> {
     await invite.reject()
+    // 触发同步，确保拒绝操作生效
+    await db.cloud.sync()
   }
 
   /**
@@ -327,9 +329,14 @@ export function useProjectMembers(projectId: string | undefined) {
  * Hook: 获取用户的待处理邀请
  * 使用 Dexie Cloud 内置的 db.cloud.invites Observable
  * 返回的邀请对象包含 accept() 和 reject() 方法
+ * 注意：Dexie Cloud 的 db.cloud.invites 只过滤了 accepted 的邀请，
+ *       我们需要额外过滤掉 rejected 的邀请
  */
 export function useUserInvites() {
   // 使用 Dexie Cloud 提供的 db.cloud.invites Observable
   // 它返回包含 accept 和 reject 方法的 Invite 对象
-  return useObservable(db.cloud.invites)
+  const allInvites = useObservable(db.cloud.invites)
+
+  // 过滤掉已拒绝的邀请（Dexie Cloud 只过滤了 accepted，没有过滤 rejected）
+  return allInvites?.filter((invite) => !invite.rejected)
 }

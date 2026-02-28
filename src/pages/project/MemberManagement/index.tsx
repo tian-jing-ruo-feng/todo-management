@@ -168,6 +168,10 @@ export default function MemberManagement({ projectId }: MemberManagementProps) {
       dataIndex: 'invite',
       key: 'invite',
       render: (invite: DBRealmMember['invite'], record: DBRealmMember) => {
+        // 如果已拒绝邀请
+        if (record.rejected) {
+          return <Tag color="red">已拒绝</Tag>
+        }
         // 如果有 accepted 字段或 userId 存在且没有 invite 标记，表示已加入
         if (record.accepted || (record.userId && !invite)) {
           return <Tag color="green">已加入</Tag>
