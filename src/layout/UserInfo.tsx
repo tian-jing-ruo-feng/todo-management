@@ -1,4 +1,4 @@
-import { Button, Dropdown, message, Spin } from 'antd'
+import { Button, Dropdown, Grid, message, Spin } from 'antd'
 import type { MenuProps } from 'antd'
 import {
   UserOutlined,
@@ -44,6 +44,10 @@ export default function UserInfo(props: { onLogin: () => void }) {
 
   // 优先显示成员记录中的别名，其次显示 currentUser.name
   const displayName = memberName || user?.name
+
+  // 响应式检测
+  const screens = Grid.useBreakpoint()
+  const isSmallScreen = !screens.md // <768px
 
   const handleMenuClick: MenuProps['onClick'] = async (e) => {
     if (e.key === 'logout') {
@@ -102,9 +106,15 @@ export default function UserInfo(props: { onLogin: () => void }) {
             menu={{ items, onClick: handleMenuClick }}
             placement="bottomRight"
           >
-            <h2 className="font-bold cursor-pointer">
-              <span>欢迎，</span>
-              {displayName}
+            <h2 className="font-bold cursor-pointer whitespace-nowrap flex items-center gap-1">
+              {!isSmallScreen && <span>欢迎，</span>}
+              <span
+                className="overflow-hidden text-ellipsis inline-block"
+                style={{ maxWidth: isSmallScreen ? '70px' : '120px' }}
+                title={displayName}
+              >
+                {displayName}
+              </span>
             </h2>
           </Dropdown>
         ) : (

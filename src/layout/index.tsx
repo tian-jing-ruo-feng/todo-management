@@ -1,4 +1,4 @@
-import { Layout, message } from 'antd'
+import { Grid, Layout, message } from 'antd'
 import { useEffect, useState } from 'react'
 import { initConfigData } from '@/utils/initConfigData'
 import { useUser } from '@/hooks/useUser'
@@ -27,6 +27,10 @@ export default function PageLayout() {
   const [manualLogin, setManualLogin] = useState(false)
   const { isLoggedIn: userLoggedIn, isLoading, isRestoring } = useUser()
   const { settings: wallpaperSettings } = useWallpaper()
+
+  // 响应式检测
+  const screens = Grid.useBreakpoint()
+  const isSmallScreen = !screens.md // <768px
 
   // 派生状态：判断是否应该显示登录框
   // 条件1：用户手动点击登录按钮
@@ -120,16 +124,22 @@ export default function PageLayout() {
       <Layout className="relative z-10 flex flex-col size-full bg-transparent!">
         <Header className="bg-linear-[135deg,#6253e1,#04befe]!">
           <div className="flex justify-between items-center h-full leading-none">
-            <div className="font-bold text-2xl text-white">TaskFlow</div>
-            <div className="flex-1 flex justify-end">
-              <div className="flex items-center gap-4">
-                {userLoggedIn && currentView === 'project-detail' && (
+            <div
+              className={`font-bold text-white ${isSmallScreen ? 'text-lg' : 'text-2xl'}`}
+            >
+              TaskFlow
+            </div>
+            <div className="flex-1 flex justify-end gap-3">
+              {/* 项目选择器：大屏模式显示在中间，小屏模式显示在右侧 */}
+              {userLoggedIn && currentView === 'project-detail' && (
+                <div className="flex items-center">
                   <ProjectSelector
                     currentProjectId={currentProjectId}
                     onProjectChange={setCurrentProjectId}
                   />
-                )}
-              </div>
+                </div>
+              )}
+              {/* 用户信息和通知 */}
               <div className="flex items-center gap-3">
                 {userLoggedIn && <InviteNotification />}
                 <UserInfo onLogin={handleLogin} />
