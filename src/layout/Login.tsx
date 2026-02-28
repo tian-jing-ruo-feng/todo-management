@@ -160,6 +160,7 @@ export function MyLoginGUI(props: {
       } catch (e) {
         console.error('同步失败:', e)
       }
+      setIsLogining(false)
       onLoginSuccess()
     } catch (error: unknown) {
       // 兜底处理：虽然 customLoginGui 模式下错误主要通过 userInteraction 传递

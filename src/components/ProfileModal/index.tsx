@@ -67,6 +67,12 @@ export default function ProfileModal({ visible, onClose }: ProfileModalProps) {
             db.members.update(member.id, { name: newName })
           )
         )
+        // 触发同步，确保更新同步到云端
+        try {
+          await db.cloud.sync()
+        } catch (e) {
+          console.error('同步失败:', e)
+        }
       }
 
       message.success('用户别名更新成功')
