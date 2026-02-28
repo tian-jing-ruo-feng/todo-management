@@ -1,6 +1,10 @@
 import { Button, Dropdown, message, Spin } from 'antd'
 import type { MenuProps } from 'antd'
-import { UserOutlined, LogoutOutlined, PictureOutlined } from '@ant-design/icons'
+import {
+  UserOutlined,
+  LogoutOutlined,
+  PictureOutlined,
+} from '@ant-design/icons'
 import db from '../utils/db'
 import { useUser } from '@/hooks/useUser'
 import { useWallpaper } from '@/contexts/useWallpaper'
@@ -12,21 +16,31 @@ import { useLiveQuery } from 'dexie-react-hooks'
 export default function UserInfo(props: { onLogin: () => void }) {
   const { onLogin } = props
   const { user, isLoggedIn: userLoggedIn, isLoading } = useUser()
-  const { settings: wallpaperSettings, updateSettings: updateWallpaperSettings, resetSettings: resetWallpaperSettings } = useWallpaper()
+  const {
+    settings: wallpaperSettings,
+    updateSettings: updateWallpaperSettings,
+    resetSettings: resetWallpaperSettings,
+  } = useWallpaper()
   const [profileModalVisible, setProfileModalVisible] = useState(false)
   const [wallpaperModalVisible, setWallpaperModalVisible] = useState(false)
 
   // 从成员记录中获取用户别名（优先显示）
   const memberName = useLiveQuery(async () => {
+    // 确保用户已登录再查询
+    if (!userLoggedIn) return null
+
     const currentUserId = db.cloud.currentUserId
-    if (!currentUserId) return null
+
+    // 过滤无效的用户 ID（如 'unauthorized'）
+    if (!currentUserId || currentUserId === 'unauthorized') return null
+
     // 获取所有成员，然后过滤匹配当前用户
     const allMembers = await db.members.toArray()
     const member = allMembers.find(
       (m) => m.userId === currentUserId || m.email === currentUserId
     )
     return member?.name || null
-  }, [])
+  }, [userLoggedIn])
 
   // 优先显示成员记录中的别名，其次显示 currentUser.name
   const displayName = memberName || user?.name
