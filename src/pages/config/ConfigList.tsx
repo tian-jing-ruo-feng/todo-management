@@ -77,13 +77,6 @@ export default function ConfigList({
   }
   const columns: TableProps<ConfigItem>['columns'] = [
     {
-      title: 'ID',
-      dataIndex: 'id',
-      key: 'id',
-      width: 150,
-      ellipsis: true,
-    },
-    {
       title: '名称',
       dataIndex: 'name',
       key: 'name',
