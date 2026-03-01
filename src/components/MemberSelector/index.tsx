@@ -20,6 +20,12 @@ export default function MemberSelector({
   allowClear = true,
   disabled = false,
 }: MemberSelectorProps) {
+  // 获取所有用户配置（从 users 表获取别名）
+  const userProfiles = useLiveQuery(async () => {
+    const profiles = await db.users.toArray()
+    return new Map(profiles.map((p) => [p.userId, p.name]))
+  }, [])
+
   // 获取项目成员列表
   const members = useLiveQuery(async () => {
     if (!projectId) return []
@@ -31,7 +37,7 @@ export default function MemberSelector({
     const projectMembers = await db.members
       .where('realmId')
       .equals(project.realmId)
-      .filter((m) => m.accepted && !m.rejected) // 排除未接受和已拒绝的成员
+      .filter((m) => Boolean(m.accepted) && !m.rejected) // 排除未接受和已拒绝的成员
       .toArray()
 
     // 查找所有者在成员表中的记录
@@ -39,11 +45,22 @@ export default function MemberSelector({
       (m) => m.userId === project.owner || m.email === project.owner
     )
 
+    // 获取显示名称（优先使用 users 表中的别名）
+    const getDisplayName = (
+      userId: string | undefined,
+      fallbackName?: string
+    ) => {
+      if (userId && userProfiles?.has(userId)) {
+        return userProfiles.get(userId)
+      }
+      return fallbackName
+    }
+
     // 合并成员和所有者
     const allMembers = [
       {
         id: project.owner || '',
-        name: ownerMember?.name || '项目所有者',
+        name: getDisplayName(project.owner, ownerMember?.name) || '项目所有者',
         email: ownerMember?.email || project.owner,
         isOwner: true,
         hasUserId: true,
@@ -53,7 +70,11 @@ export default function MemberSelector({
         .map((m) => ({
           // 优先使用 userId，其次 email
           id: m.userId || m.email || '',
-          name: m.name || m.email || m.userId || '未命名成员',
+          name:
+            getDisplayName(m.userId, m.name) ||
+            m.email ||
+            m.userId ||
+            '未命名成员',
           email: m.email,
           isOwner: false,
           hasUserId: !!m.userId,
@@ -66,7 +87,7 @@ export default function MemberSelector({
     )
 
     return uniqueMembers
-  }, [projectId])
+  }, [projectId, userProfiles])
 
   if (!projectId) {
     return (
