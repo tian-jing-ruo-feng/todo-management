@@ -27,10 +27,11 @@ export default function MemberSelector({
     const project = await db.projects.get(projectId)
     if (!project) return []
 
-    // 获取项目成员
+    // 获取项目成员（只包含已接受且未拒绝的成员）
     const projectMembers = await db.members
       .where('realmId')
       .equals(project.realmId)
+      .filter((m) => m.accepted && !m.rejected) // 排除未接受和已拒绝的成员
       .toArray()
 
     // 查找所有者在成员表中的记录

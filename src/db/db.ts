@@ -10,6 +10,7 @@ import type { Priority as PriorityType } from '@/types/Priority'
 import type { Project as ProjectType } from '@/types/Project'
 import type { Status as StatusType } from '@/types/Status'
 import type { Task as TaskType } from '@/types/Task'
+import type { User as UserType } from '@/types/User'
 import { Group } from './group'
 import { Priority } from './priority'
 import { Project } from './project'
@@ -25,6 +26,7 @@ export class ToDoDb extends Dexie {
   statuses!: Dexie.Table<StatusType>
   priorities!: Dexie.Table<PriorityType>
   groups!: Dexie.Table<GroupType>
+  users!: Dexie.Table<UserType>
   // 使用 Dexie Cloud 内置的 members, roles 和 realms 表
   members!: Dexie.Table<DBRealmMember>
   roles!: Dexie.Table<DBRealmRole>
@@ -52,6 +54,11 @@ export class ToDoDb extends Dexie {
     // 升级到版本3：添加 realmId 索引
     this.version(3).stores({
       projects: 'id, name, owner, realmId',
+    })
+
+    // 升级到版本4：添加 users 表存储全局用户配置
+    this.version(4).stores({
+      users: 'id, userId, email',
     })
 
     this.cloud.configure({

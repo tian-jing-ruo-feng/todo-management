@@ -15,28 +15,25 @@ export default function ProfileModal({ visible, onClose }: ProfileModalProps) {
   const { user } = useUser()
   const currentUserId = db.cloud.currentUserId
 
-  // 从成员记录中获取用户别名（响应式）
-  const memberName = useLiveQuery(async () => {
+  // 从 users 表获取用户别名（响应式，优先级最高）
+  const userProfile = useLiveQuery(async () => {
     if (!currentUserId) return null
 
-    // 获取所有成员，然后过滤匹配当前用户
-    const allMembers = await db.members.toArray()
-    const member = allMembers.find(
-      (m) => m.userId === currentUserId || m.email === currentUserId
-    )
+    // 从 users 表获取全局用户配置
+    const user = await db.users.where('userId').equals(currentUserId).first()
 
-    return member?.name || null
+    return user
   }, [currentUserId])
 
   useEffect(() => {
     if (visible && user) {
-      // 优先显示成员记录中的别名
+      // 优先显示 users 表中的别名，其次显示 currentUser.name
       form.setFieldsValue({
-        name: memberName || user.name || '',
+        name: userProfile?.name || user.name || '',
         email: user.email || '',
       })
     }
-  }, [visible, user, memberName, form])
+  }, [visible, user, userProfile, form])
 
   const handleOk = async () => {
     try {
@@ -55,11 +52,41 @@ export default function ProfileModal({ visible, onClose }: ProfileModalProps) {
         return
       }
 
-      // 更新所有项目中当前用户的成员记录名称
-      const members = await db.members
+      const currentUser = db.cloud.currentUser.value
+      const now = new Date().toISOString()
+
+      // 1. 更新 users 表（全局用户配置，会同步到云端）
+      const existingUser = await db.users
         .where('userId')
         .equals(currentUserId)
-        .toArray()
+        .first()
+      console.log(db.users, '<<<<< db.users')
+      console.log(existingUser, '<<<<<< TodoDB_z2quxatc8 existingUser')
+
+      if (existingUser) {
+        await db.users.update(existingUser.id, {
+          name: newName,
+          updatedAt: now,
+        })
+      } else {
+        // 创建新的用户配置
+        await db.users.add({
+          id: `user_${currentUserId}`,
+          userId: currentUserId,
+          email: currentUser?.email,
+          name: newName,
+          owner: currentUserId,
+          realmId: currentUserId, // 用户配置使用 userId 作为 realmId
+          createdAt: now,
+          updatedAt: now,
+        })
+      }
+
+      // 2. 更新所有项目中当前用户的成员记录名称
+      const allMembers = await db.members.toArray()
+      const members = allMembers.filter(
+        (m) => m.userId === currentUserId || m.email === currentUserId
+      )
 
       if (members.length > 0) {
         await Promise.all(
@@ -67,12 +94,21 @@ export default function ProfileModal({ visible, onClose }: ProfileModalProps) {
             db.members.update(member.id, { name: newName })
           )
         )
-        // 触发同步，确保更新同步到云端
-        try {
-          await db.cloud.sync()
-        } catch (e) {
-          console.error('同步失败:', e)
-        }
+      }
+
+      // 3. 同步更新 currentUser.name（内存中的 BehaviorSubject）
+      if (currentUser) {
+        db.cloud.currentUser.next({
+          ...currentUser,
+          name: newName,
+        })
+      }
+
+      // 4. 触发同步，确保更新同步到云端
+      try {
+        await db.cloud.sync()
+      } catch (e) {
+        console.error('同步失败:', e)
       }
 
       message.success('用户别名更新成功')

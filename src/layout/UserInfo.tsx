@@ -24,8 +24,8 @@ export default function UserInfo(props: { onLogin: () => void }) {
   const [profileModalVisible, setProfileModalVisible] = useState(false)
   const [wallpaperModalVisible, setWallpaperModalVisible] = useState(false)
 
-  // 从成员记录中获取用户别名（优先显示）
-  const memberName = useLiveQuery(async () => {
+  // 从 users 表获取用户别名（优先显示，会同步到云端）
+  const userDisplayName = useLiveQuery(async () => {
     // 确保用户已登录再查询
     if (!userLoggedIn) return null
 
@@ -34,16 +34,17 @@ export default function UserInfo(props: { onLogin: () => void }) {
     // 过滤无效的用户 ID（如 'unauthorized'）
     if (!currentUserId || currentUserId === 'unauthorized') return null
 
-    // 获取所有成员，然后过滤匹配当前用户
-    const allMembers = await db.members.toArray()
-    const member = allMembers.find(
-      (m) => m.userId === currentUserId || m.email === currentUserId
-    )
-    return member?.name || null
+    // 从 users 表获取全局用户配置
+    const user = await db.users
+      .where('userId')
+      .equals(currentUserId)
+      .first()
+
+    return user?.name || null
   }, [userLoggedIn])
 
-  // 优先显示成员记录中的别名，其次显示 currentUser.name
-  const displayName = memberName || user?.name
+  // 优先显示 users 表中的别名，其次显示 currentUser.name
+  const displayName = userDisplayName || user?.name
 
   // 响应式检测
   const screens = Grid.useBreakpoint()

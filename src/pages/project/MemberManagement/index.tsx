@@ -30,6 +30,13 @@ export default function MemberManagement({ projectId }: MemberManagementProps) {
   // 获取项目信息
   const project = useProject(projectId)
 
+  // 获取所有用户配置（从 users 表获取别名）
+  const userProfiles = useLiveQuery(async () => {
+    const profiles = await db.users.toArray()
+    // 返回 userId -> name 的映射
+    return new Map(profiles.map((p) => [p.userId, p.name]))
+  }, [])
+
   // 获取项目所有者信息
   const ownerInfo = useLiveQuery(async () => {
     if (!project?.owner) return null
@@ -44,14 +51,21 @@ export default function MemberManagement({ projectId }: MemberManagementProps) {
         .filter((m) => m.userId === project.owner)
         .first()
 
+      // 优先使用 users 表中的别名
+      const displayName =
+        userProfiles?.get(project.owner) ||
+        ownerMember?.name ||
+        ownerMember?.userId ||
+        '项目所有者'
+
       return {
         userId: project.owner,
-        name: ownerMember?.name || ownerMember?.userId || '项目所有者',
+        name: displayName,
         email: ownerMember?.email || '',
       }
     }
     return null
-  }, [project])
+  }, [project, userProfiles])
 
   const handleRemoveMember = async (memberId: string) => {
     Modal.confirm({
@@ -109,37 +123,48 @@ export default function MemberManagement({ projectId }: MemberManagementProps) {
     return <Tag color={config.color}>{config.text}</Tag>
   }
 
+  // 获取成员显示名称（优先使用 users 表中的别名）
+  const getMemberDisplayName = (member: DBRealmMember) => {
+    if (member.userId && userProfiles?.has(member.userId)) {
+      return userProfiles.get(member.userId)
+    }
+    return member.name || member.email || member.userId || '未命名成员'
+  }
+
   const columns = [
     {
       title: '成员',
       dataIndex: 'name',
       key: 'name',
-      render: (name: string, record: DBRealmMember) => (
-        <div className="flex items-center gap-3">
-          <Avatar
-            size={40}
-            icon={<UserOutlined />}
-            style={{
-              backgroundColor:
-                record.userId === project?.owner ? '#6253e1' : '#04befe',
-            }}
-          >
-            {name?.charAt(0).toUpperCase() ||
-              record.email?.charAt(0).toUpperCase()}
-          </Avatar>
-          <div>
-            <div className="font-medium">
-              {name || record.email}
-              {record.userId === project?.owner && (
-                <Tag color="purple" className="ml-2">
-                  所有者
-                </Tag>
-              )}
+      render: (_name: string, record: DBRealmMember) => {
+        const displayName = getMemberDisplayName(record)
+        return (
+          <div className="flex items-center gap-3">
+            <Avatar
+              size={40}
+              icon={<UserOutlined />}
+              style={{
+                backgroundColor:
+                  record.userId === project?.owner ? '#6253e1' : '#04befe',
+              }}
+            >
+              {displayName?.charAt(0).toUpperCase() ||
+                record.email?.charAt(0).toUpperCase()}
+            </Avatar>
+            <div>
+              <div className="font-medium">
+                {displayName}
+                {record.userId === project?.owner && (
+                  <Tag color="purple" className="ml-2">
+                    所有者
+                  </Tag>
+                )}
+              </div>
+              <div className="text-gray-500 text-sm">{record.email}</div>
             </div>
-            <div className="text-gray-500 text-sm">{record.email}</div>
           </div>
-        </div>
-      ),
+        )
+      },
     },
     {
       title: '角色',
