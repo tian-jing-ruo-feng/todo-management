@@ -1,5 +1,5 @@
 // 重新导出新的数据库实例
-export { default, ToDoDb } from '@/db/db'
+export { default, ToDoDb, DB_NAME } from '@/db/db'
 
 // 保留原有的工具函数
 import type { Task } from '@/types/Task'

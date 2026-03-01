@@ -5,7 +5,7 @@ import {
   LogoutOutlined,
   PictureOutlined,
 } from '@ant-design/icons'
-import db from '../utils/db'
+import db, { DB_NAME } from '../utils/db'
 import { useUser } from '@/hooks/useUser'
 import { useWallpaper } from '@/contexts/useWallpaper'
 import { useState } from 'react'
@@ -52,10 +52,10 @@ export default function UserInfo(props: { onLogin: () => void }) {
   const handleMenuClick: MenuProps['onClick'] = async (e) => {
     if (e.key === 'logout') {
       try {
+        // 先退出登录（清理云端会话）
         await db.cloud.logout({ force: true })
+
         message.success('退出成功')
-        // 清除本地数据
-        await db.delete()
         location.reload()
       } catch (error) {
         console.error('退出登录失败:', error)

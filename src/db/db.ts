@@ -16,6 +16,9 @@ import { Project } from './project'
 import { Status } from './status'
 import { Task } from './task'
 
+// 数据库名称常量，统一管理
+export const DB_NAME = 'TodoDB'
+
 export class ToDoDb extends Dexie {
   projects!: Dexie.Table<ProjectType>
   tasks!: Dexie.Table<TaskType>
@@ -28,7 +31,7 @@ export class ToDoDb extends Dexie {
   realms!: Dexie.Table<DBRealm>
 
   constructor() {
-    super('TodoDB', {
+    super(DB_NAME, {
       addons: [dexieCloud],
     })
 
